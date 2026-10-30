@@ -1,0 +1,1604 @@
+<!doctype html>
+<html lang="th" class="gh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CNMP Stock</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#121110">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CNMP">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/SpindleMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+@font-face{font-family:"Spindle Mono";src:url(fonts/SpindleMono.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Spindle Display";src:url(fonts/SpindleDisplay.woff2) format("woff2");font-display:swap}
+
+/* Layout: one fixed screen per device (phone / iPad / PC). The shell never scrolls; only data lists scroll inside
+   their own panels. Brand red (from the CINE MOOD PRODUCT seal) carries the primary numbers and actions;
+   sage, sand, dust-blue and rose tiles hold secondary figures. Latin + numbers in Spindle Mono, Thai in Plex Thai Looped. */
+:root{
+  /* dark-first */
+  --bg:#121110; --surface:#1B1918; --surface-2:#252220; --line:#34302D; --fg:#EFEAE4; --muted:#9C938B; --faint:#655D57;
+  --brand:#A94D41; --on-brand:#FBF0E9; --accent:#E2806F;
+  --sage:#CFD8CB; --sand:#E5D0AA; --dust:#A9BDC5; --rose:#E3B1A3; --on-tile:#1B1715;
+  --ok:#8FCB86; --warn:#E8B04E; --bad:#F06A5A;
+  --chip-on-bg:#EFEAE4; --chip-on-fg:#1B1715;
+  --bar-in:#D06A5B; --bar-out:#4C4642; --grid:#2A2623;
+  --scrim:rgba(0,0,0,.55); --shadow:0 18px 60px rgba(0,0,0,.55);
+  --f-th:"IBM Plex Sans Thai Looped","Noto Sans Thai Looped","Leelawadee UI","Thonburi",sans-serif;
+  --f-display:"Spindle Mono",var(--f-th);
+  --f-poster:"Spindle Display","Spindle Mono",var(--f-th);
+  --f-body:"Spindle Mono",var(--f-th);
+  --r-tile:20px; --r-ctl:999px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#E2E6DE; --surface:#F4F5F1; --surface-2:#E9ECE5; --line:#CBD1C6; --fg:#1C1917; --muted:#625C57; --faint:#9A958F;
+    --brand:#94473E; --on-brand:#FBF0E9; --accent:#94473E;
+    --sage:#C3CEBD; --sand:#E9D5AE; --dust:#ABC0C8; --rose:#E7B6A8; --on-tile:#1B1715;
+    --ok:#2F7D3A; --warn:#9A6400; --bad:#B8352A;
+    --chip-on-bg:#1C1917; --chip-on-fg:#F4F5F1;
+    --bar-in:#94473E; --bar-out:#B8BEB1; --grid:#D3D8CD;
+    --scrim:rgba(28,25,23,.35); --shadow:0 18px 50px rgba(30,28,24,.18);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#E2E6DE; --surface:#F4F5F1; --surface-2:#E9ECE5; --line:#CBD1C6; --fg:#1C1917; --muted:#625C57; --faint:#9A958F;
+  --brand:#94473E; --on-brand:#FBF0E9; --accent:#94473E;
+  --sage:#C3CEBD; --sand:#E9D5AE; --dust:#ABC0C8; --rose:#E7B6A8; --on-tile:#1B1715;
+  --ok:#2F7D3A; --warn:#9A6400; --bad:#B8352A;
+  --chip-on-bg:#1C1917; --chip-on-fg:#F4F5F1;
+  --bar-in:#94473E; --bar-out:#B8BEB1; --grid:#D3D8CD;
+  --scrim:rgba(28,25,23,.35); --shadow:0 18px 50px rgba(30,28,24,.18);
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:inherit}
+.num{font-family:var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.lbl{font-family:var(--f-display);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);line-height:1.35}
+.muted{color:var(--muted)}
+[hidden]{display:none!important}
+.mark{display:block;width:34px;height:34px;flex:none;background:var(--brand);-webkit-mask:url(icons/mark.png) center/contain no-repeat;mask:url(icons/mark.png) center/contain no-repeat}
+.logo-full{width:100%;max-width:180px;aspect-ratio:1;background:var(--brand);-webkit-mask:url(icons/logo-full.png) center/contain no-repeat;mask:url(icons/logo-full.png) center/contain no-repeat}
+
+/* ---------- shell ---------- */
+.app{height:100%;display:grid;grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top" "view" "tabs";margin:0 auto;width:100%;position:relative}
+.gh .app{padding-top:env(safe-area-inset-top,0px)}
+.rail{grid-area:rail;display:none}
+.top{grid-area:top;display:flex;align-items:center;gap:10px;padding-block:10px 8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.top h1{margin:0;flex:1;min-width:0;font-family:var(--f-display);font-weight:500;font-size:17px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .sub{font-size:12px;color:var(--muted);white-space:nowrap}
+#view{grid-area:view;min-height:0;min-width:0;display:flex;flex-direction:column;gap:10px;padding-block:4px 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:hidden}
+.icon-btn{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none;padding:0}
+.icon-btn svg{width:19px;height:19px}
+.badge{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface)}
+.badge.bad{background:var(--bad)}
+
+.tabbar{grid-area:tabs;padding-top:6px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.tabbar-in{display:grid;grid-template-columns:repeat(5,1fr);align-items:center;max-width:520px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:26px;height:62px;padding:0 4px}
+.tab{position:relative;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--muted);font-size:12px;line-height:1.3;padding:6px 0}
+.tab svg{width:21px;height:21px}
+.tab.on{color:var(--fg)}
+.rec{justify-self:center;width:54px;height:54px;border-radius:50%;border:0;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;transform:translateY(-12px);box-shadow:0 8px 22px rgba(0,0,0,.3)}
+.rec svg{width:26px;height:26px}
+
+/* tablet + PC: left rail */
+[data-device="tablet"] .app,[data-device="pc"] .app{grid-template-rows:auto minmax(0,1fr);grid-template-areas:"rail top" "rail view"}
+[data-device="tablet"] .app{grid-template-columns:92px minmax(0,1fr)}
+[data-device="pc"] .app{grid-template-columns:232px minmax(0,1fr)}
+[data-device="tablet"] .tabbar,[data-device="pc"] .tabbar,[data-device="tablet"] .menu-btn,[data-device="pc"] .menu-btn,[data-device="tablet"] .top .mark,[data-device="pc"] .top .mark{display:none}
+[data-device="tablet"] .rail,[data-device="pc"] .rail{display:flex;flex-direction:column;gap:2px;min-height:0;overflow:hidden;border-right:1px solid var(--line);padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:10px;padding-top:14px}
+.rail .brand{display:flex;align-items:center;gap:10px;padding:0 6px 16px}
+.rail .brand b{font-family:var(--f-display);font-weight:400;font-size:13px;letter-spacing:.08em;line-height:1.15}
+.rail a{position:relative;display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:14px;color:var(--muted);text-decoration:none;font-size:15px}
+.rail a svg{width:20px;height:20px;flex:none}
+.rail a.on{background:var(--surface);color:var(--fg)}
+.rail a:hover{color:var(--fg)}
+.rail a .badge{top:8px;right:auto;left:26px}
+.rail .rec-wide{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border:0;border-radius:var(--r-ctl);background:var(--brand);color:var(--on-brand);font-size:15px}
+.rail .rec-wide svg{width:20px;height:20px}
+[data-device="tablet"] .rail .brand{justify-content:center;padding:0 0 14px}
+[data-device="tablet"] .rail .brand b{display:none}
+[data-device="tablet"] .rail a{flex-direction:column;gap:2px;padding:8px 2px;font-size:11px;text-align:center;line-height:1.25}
+[data-device="tablet"] .rail a .badge{left:auto;right:18px}
+[data-device="tablet"] .rail .rec-wide{width:60px;height:60px;border-radius:50%;align-self:center}
+[data-device="tablet"] .rail .rec-wide span{display:none}
+[data-device="tablet"] .top,[data-device="pc"] .top{padding-block:16px 10px}
+[data-device="pc"] .top h1{font-size:19px}
+[data-device="tablet"] #view,[data-device="pc"] #view{gap:12px;padding-block:2px 16px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+/* a forced device on a larger screen keeps its own proportions */
+[data-forced="phone"] .app{max-width:460px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+[data-forced="tablet"] .app{max-width:1180px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+
+/* ---------- building blocks ---------- */
+.scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.tile{border-radius:var(--r-tile);padding:14px 16px;min-width:0;position:relative;display:flex;flex-direction:column;gap:4px;border:0;text-align:left;font:inherit;color:inherit}
+button.tile{cursor:pointer}
+.t-card{background:var(--surface);border:1px solid var(--line)}
+.t-brand{background:var(--brand);color:var(--on-brand)}
+.t-sage{background:var(--sage);color:var(--on-tile)}
+.t-sand{background:var(--sand);color:var(--on-tile)}
+.t-dust{background:var(--dust);color:var(--on-tile)}
+.t-rose{background:var(--rose);color:var(--on-tile)}
+.tile .lbl{color:inherit;opacity:.75}
+.t-card .lbl{color:var(--muted);opacity:1}
+.tile .big{font-family:var(--f-display);font-size:26px;line-height:1.05;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .huge{font-family:var(--f-poster);font-size:clamp(40px,11vw,64px);line-height:.95;letter-spacing:-.03em}
+.tile .sub{font-size:13px;opacity:.85}
+.tile .arrow{position:absolute;right:12px;top:12px;width:30px;height:30px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;opacity:.6}
+.tile .arrow svg{width:14px;height:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-tile);padding:14px 16px;min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.card.flush{padding:0;gap:0;overflow:hidden}
+.card.flush .card-h{padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.card-h{display:flex;align-items:center;gap:10px;flex:none;min-height:30px}
+.card-h h2{margin:0;flex:1;min-width:0;font-family:var(--f-display);font-weight:500;font-size:14px;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-ctl);padding:3px;gap:2px;background:var(--bg);flex:none}
+.seg button{border:0;background:none;padding:4px 12px;border-radius:var(--r-ctl);font-size:13px;color:var(--muted);white-space:nowrap}
+.seg button.on{background:var(--chip-on-bg);color:var(--chip-on-fg)}
+.toolbar{display:flex;gap:8px;align-items:center;flex:none;min-width:0}
+.search{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-radius:var(--r-ctl);background:var(--surface);border:1px solid var(--line)}
+.search svg{width:18px;height:18px;color:var(--muted);flex:none}
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:15px}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:none;margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 13px;border-radius:var(--r-ctl);border:1px solid var(--line);background:transparent;font-size:14px;color:var(--muted);white-space:nowrap}
+.chip.on{background:var(--chip-on-bg);color:var(--chip-on-fg);border-color:var(--chip-on-bg)}
+.chip .n{font-family:var(--f-display);font-size:11px;margin-left:6px;opacity:.7}
+.summary{display:flex;flex-wrap:wrap;gap:2px 16px;font-size:14px;color:var(--muted);flex:none}
+.summary b{color:var(--fg);font-family:var(--f-display);font-weight:400}
+.btn{height:44px;padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px;white-space:nowrap;text-decoration:none;flex:none}
+.btn svg{width:18px;height:18px}
+.btn.pri{background:var(--brand);color:var(--on-brand);border-color:transparent}
+.btn.ghost{background:none}
+.btn.danger{color:var(--bad);border-color:var(--bad);background:none}
+.btn.danger.arm{background:var(--bad);color:#fff}
+.btn.sm{height:36px;padding:0 14px;font-size:14px}
+.btn.icon-only{width:44px;padding:0}
+[data-device="phone"] .btn .hide-phone{display:none}
+.actions{display:flex;gap:8px;flex-wrap:wrap;flex:none}
+.actions .grow{flex:1}
+.actions.nowrap{flex-wrap:nowrap}
+.actions.nowrap .btn{padding:0 12px;min-width:0}
+
+/* lists */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-tile)}
+.card .list{border:0;border-radius:0;background:none}
+.row{display:flex;align-items:center;gap:12px;padding:11px 16px;border:0;border-top:1px solid var(--line);background:none;text-align:left;width:100%;min-width:0;color:inherit;text-decoration:none}
+.row:first-child,.month-h+.row{border-top:0}
+button.row:hover,a.row:hover{background:var(--surface-2)}
+.row .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;font-family:var(--f-display);font-size:12px;color:var(--on-tile)}
+.row .ic svg{width:18px;height:18px}
+.row .ic.ph{position:relative;overflow:hidden;border-radius:12px;width:44px;height:44px}
+.row .ic.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--surface-2)}
+img.broken{display:none!important}
+.media{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px;flex:none}
+[data-device="tablet"] .media,[data-device="pc"] .media{grid-template-columns:150px minmax(0,1fr)}
+.photo{position:relative;border-radius:16px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);aspect-ratio:1;display:grid;place-items:center;color:var(--muted);padding:0;width:100%;font:inherit}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .ph-note{font-size:11px;text-align:center;padding:8px;line-height:1.35;display:flex;flex-direction:column;align-items:center;gap:4px}
+.photo .ph-note svg{width:22px;height:22px}
+.media .qr-box{height:100%}
+.photo-field{display:flex;gap:10px;align-items:center;min-width:0}
+.photo-field .photo{width:64px;flex:none;border-radius:12px}
+.photo-field .actions{flex:1;min-width:0}
+.photo-field .st{color:var(--muted)}
+.lens-photo{height:120px;flex:none}
+.lens-photo .photo{height:100%;aspect-ratio:auto}
+.viewer{flex:1;min-height:0;position:relative;border-radius:16px;overflow:hidden;background:#000}
+.viewer img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.row .body{flex:1;min-width:0}
+.row .t{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .r{text-align:right;flex:none}
+.row .r>span{display:block}
+.row .q{font-family:var(--f-display);font-size:20px;line-height:1.1}
+.row .rs{font-size:12px;color:var(--muted);font-family:var(--f-display)}
+.row .c{flex:none;width:96px;text-align:right;font-family:var(--f-display);font-size:14px;color:var(--muted)}
+.row .c.w{width:120px}
+[data-device="phone"] .row .c,[data-device="phone"] .list-head,.home .row .c,.panel .row .c{display:none}
+.list-head{display:flex;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:1}
+.list-head span{font-size:12px;color:var(--muted)}
+.list-head .h-body{flex:1;padding-left:50px}
+.list-head .c{width:96px;text-align:right;flex:none}
+.list-head .c.w{width:120px}
+.list-head .h-r{width:84px;text-align:right}
+.month-h{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px 6px;position:sticky;top:0;background:var(--surface);z-index:1;border-top:1px solid var(--line)}
+.month-h:first-child{border-top:0}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--fg);font-weight:500;margin-bottom:2px}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:none;display:inline-block}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--r-ctl);font-size:12px;color:var(--on-tile);white-space:nowrap}
+.bg-brand{background:var(--brand);color:var(--on-brand)!important}.bg-sage{background:var(--sage)}.bg-sand{background:var(--sand)}.bg-dust{background:var(--dust)}.bg-rose{background:var(--rose)}.bg-mute{background:var(--surface-2);color:var(--muted)!important}
+
+/* ---------- home ---------- */
+.home{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.h-hero{flex:none}
+.h-hero .split{display:flex;flex-wrap:wrap;gap:4px 20px;margin-top:6px;font-size:13px}
+.h-hero .split b{display:block;font-family:var(--f-display);font-weight:400;font-size:16px}
+.h-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:none}
+.h-stats .tile{padding:12px 14px}
+.h-stats .big{font-size:22px}
+.h-chart{flex:none;height:178px}
+.chart-box{flex:1;min-height:0;position:relative}
+.chart-box svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.chart-box text{fill:var(--muted);font-family:var(--f-display);font-size:10px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap;flex:none}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+.h-list{flex:1;min-height:0}
+.h-low{display:none}
+@media (max-height:720px){[data-device="phone"] .h-chart{display:none}}
+[data-device="tablet"] .home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"hero list" "stats list" "chart list"}
+[data-device="pc"] .home{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"hero list low" "stats list low" "chart list low";gap:12px}
+[data-device="tablet"] .h-hero,[data-device="pc"] .h-hero{grid-area:hero}
+[data-device="tablet"] .h-stats,[data-device="pc"] .h-stats{grid-area:stats}
+[data-device="tablet"] .h-chart,[data-device="pc"] .h-chart{grid-area:chart;height:auto}
+[data-device="tablet"] .h-list,[data-device="pc"] .h-list{grid-area:list}
+[data-device="pc"] .h-low{grid-area:low;display:flex}
+[data-device="pc"] .h-list .seg{display:none}
+[data-device="pc"] .h-hero .huge,[data-device="tablet"] .h-hero .huge{font-size:72px}
+@media (orientation:portrait){[data-device="tablet"] .home{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 210px minmax(0,1fr);grid-template-areas:"hero" "stats" "chart" "list"}}
+[data-device="pc"] .h-stats .big{font-size:26px}
+
+/* ---------- sheets ---------- */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet .scrim{position:absolute;inset:0;background:var(--scrim);animation:fade .16s ease-out}
+.panel{position:relative;width:100%;max-width:620px;max-height:calc(100% - 24px);display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:var(--shadow);padding-top:8px;padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));animation:up .2s cubic-bezier(.2,.8,.2,1)}
+.panel.tall{height:calc(100% - 24px)}
+.panel.wide{max-width:860px}
+.grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 4px;flex:none}
+.panel-h{display:flex;align-items:flex-start;gap:12px;padding-block:6px 10px;flex:none}
+.panel-h h3{margin:0;flex:1;font-family:var(--f-display);font-weight:500;font-size:19px;line-height:1.3;letter-spacing:-.01em;min-width:0;overflow-wrap:anywhere}
+.panel-h h3 small{display:block;font-family:var(--f-body);font-weight:400;font-size:13px;color:var(--muted);letter-spacing:0;margin-top:1px}
+.panel-b{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;overflow:auto;overscroll-behavior:contain}
+.panel-f{flex:none;display:flex;flex-direction:column;gap:8px;padding-top:10px}
+.panel-b>.list.scroll{min-height:120px}
+[data-device="tablet"] .sheet,[data-device="pc"] .sheet{align-items:center;padding:20px}
+[data-device="tablet"] .panel,[data-device="pc"] .panel{border-radius:24px;border-bottom:1px solid var(--line);max-height:100%;padding-bottom:16px}
+[data-device="tablet"] .panel.tall,[data-device="pc"] .panel.tall{height:min(100%,860px)}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.panel,.sheet .scrim{animation:none}}
+
+/* forms: 4-column grid, fields span 2 by default */
+.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 10px;flex:none}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0;grid-column:span 2}
+.f.s1{grid-column:span 1}.f.full{grid-column:1/-1}
+.f label{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f label .req{color:var(--accent)}
+.in,select.in,textarea.in{width:100%;height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);outline:none;font-size:15px;min-width:0}
+select.in{padding-right:4px}
+textarea.in{height:auto;min-height:42px;padding:9px 12px;resize:none}
+.in:focus{border-color:var(--fg)}
+.in.num{font-family:var(--f-display)}
+.f .with{display:flex;gap:6px}
+.f .with .in{flex:1}
+.pick{display:flex;align-items:center;gap:8px;height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:left;width:100%;min-width:0}
+.pick span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick.empty-v span{color:var(--muted)}
+.pick svg{width:16px;height:16px;color:var(--muted);flex:none}
+.check{display:flex;align-items:center;gap:8px;height:42px;font-size:14px}
+.check input{width:20px;height:20px;accent-color:var(--brand);flex:none}
+.lines{display:flex;flex-direction:column;gap:8px;flex:1;min-height:96px;overflow:auto}
+.line{display:grid;grid-template-columns:minmax(0,1fr) 70px 96px 32px;gap:6px;align-items:end;padding:10px;border-radius:14px;background:var(--surface-2)}
+[data-device="phone"] .line{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 32px}
+[data-device="phone"] .line .f-item{grid-column:1/-1}
+.line .f{grid-column:auto}
+.x{width:32px;height:42px;border:0;background:none;color:var(--muted);display:grid;place-items:center;padding:0}
+.x svg{width:18px;height:18px}
+.total-bar{display:flex;align-items:center;gap:12px}
+.total-bar .tot{flex:1;display:flex;align-items:baseline;justify-content:space-between;gap:8px;height:48px;padding:0 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.total-bar .num{font-size:24px}
+
+.menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+[data-device="tablet"] .menu,[data-device="pc"] .menu{grid-template-columns:repeat(4,minmax(0,1fr))}
+.menu .tile{min-height:92px;justify-content:flex-end;padding:12px 14px}
+.menu .tile svg{width:22px;height:22px;position:absolute;top:12px;left:14px}
+.menu .tile b{font-weight:600;font-size:15px;line-height:1.3}
+.menu .tile span{font-size:12px;opacity:.75;line-height:1.3}
+
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;flex:none}
+.kv.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kv>div{background:var(--surface);padding:8px 12px;min-width:0}
+.kv b{display:block;font-family:var(--f-display);font-weight:400;font-size:16px;overflow-wrap:anywhere;line-height:1.3}
+.kv .full{grid-column:1/-1}
+.kv span.lbl{display:block;font-size:11px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:none}
+.trio .tile{padding:10px 12px}
+.trio .big{font-size:20px}
+.qr-box{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:#fff;color:#111;min-width:0}
+.qr-box .qr{width:84px;height:84px;flex:none}
+.qr-box .qr svg{width:100%;height:100%;display:block}
+.qr-box .num{font-size:16px;overflow-wrap:anywhere}
+.qr-box .lbl{color:#666}
+.contacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;flex:none}
+.contact{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);min-width:0;min-height:42px}
+.contact.full{grid-column:1/-1}
+.contact .lbl{flex:none;font-size:11px}
+.contact span.v{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact button{width:30px;height:30px;border:0;background:none;color:var(--muted);display:grid;place-items:center;flex:none;padding:0}
+.contact button svg{width:16px;height:16px}
+.lensfig{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px 10px;flex:none}
+.lensfig svg{width:100%;height:96px;display:block}
+.lensfig text{font-family:var(--f-display);font-size:9px;fill:var(--muted)}
+.banner{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:14px;background:var(--sand);color:var(--on-tile);font-size:14px;line-height:1.4;flex:none}
+.banner button{margin-left:auto;border:1px solid currentColor;background:none;border-radius:var(--r-ctl);height:32px;padding:0 12px;font-size:13px;white-space:nowrap}
+#qr-reader{width:100%;border-radius:16px;overflow:hidden;background:#000;min-height:200px;flex:none}
+#qr-reader video{width:100%!important;height:auto!important;display:block}
+
+/* settings */
+.setup{display:grid;grid-template-columns:1fr;gap:10px;align-content:start;flex:1;min-height:0;overflow:auto}
+[data-device="tablet"] .setup,[data-device="pc"] .setup{grid-template-columns:repeat(2,minmax(0,1fr))}
+[data-device="pc"] .setup{grid-template-columns:repeat(3,minmax(0,1fr))}
+.setup .card{gap:10px}
+.opt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.opt-row>span{font-size:14px}
+.status{display:flex;align-items:center;gap:8px;font-size:14px}
+.about{display:flex;gap:14px;align-items:center}
+.about .logo-full{width:96px;flex:none}
+
+/* labels */
+.labels{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;align-content:start}
+.label{background:#fff;color:#111;border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;break-inside:avoid}
+.label .qr{width:100px;height:100px}
+.label .qr svg{width:100%;height:100%}
+.label b{font-family:var(--f-display);font-weight:400;font-size:12px}
+.label span{font-size:11px;line-height:1.3}
+@media print{
+  html,body{overflow:visible;height:auto;background:#fff}
+  .app{display:block;height:auto}.rail,.tabbar,.top,.no-print{display:none!important}
+  #view{overflow:visible;padding:0}.scroll{overflow:visible}.label{border:1px solid #ccc}
+}
+
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--fg);color:var(--bg);padding:9px 18px;border-radius:var(--r-ctl);font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+[data-device="tablet"] #toast,[data-device="pc"] #toast{bottom:28px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="rail" id="rail"></aside>
+  <header class="top" id="top"></header>
+  <main id="view"></main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+<div id="sheets"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const T0 = performance.now();
+/* ============ utils ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const num = v => { const n = parseFloat(String(v ?? '').replace(/,/g, '')); return isFinite(n) ? n : 0; };
+const fmt = (n, d = 0) => (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const baht = n => (n < 0 ? '−' : '') + '฿' + fmt(Math.abs(n));
+const fmtQ = n => { n = Number(n) || 0; return Number.isInteger(n) ? fmt(n) : fmt(n, 2); };
+const trimNum = n => String(+(+n).toFixed(3));
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { } }
+};
+const pad = n => String(n).padStart(2, '0');
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const nowISO = () => new Date().toISOString();
+const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const MON_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const dshort = s => { if (!s) return ''; const [y, m, d] = String(s).slice(0, 10).split('-'); return `${+d} ${MON_TH[+m - 1] || ''} ${String(y).slice(2)}`; };
+const rid = p => { const d = new Date(); return `${p}-${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`; };
+const ymKey = s => String(s || '').slice(0, 7);
+const debounce = (f, ms = 140) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
+
+/* ============ images (Google Drive) ============ */
+const IS_GH = document.documentElement.classList.contains('gh');
+const driveId = u => { u = String(u || ''); const m = u.match(/(?:\/d\/|[?&]id=)([-\w]{20,})/) || u.match(/^([-\w]{25,})$/); return m ? m[1] : ''; };
+function imgSrc(u, w = 200) {
+  u = String(u || ''); if (!u) return '';
+  if (u.startsWith('data:image')) return u;
+  const id = driveId(u); if (id) return `https://lh3.googleusercontent.com/d/${id}=w${w}`;
+  return /^https?:\/\//.test(u) ? u : '';
+}
+const imgTag = (u, w) => { const s = imgSrc(u, w); return s ? `<img src="${esc(s)}" alt="" loading="lazy" decoding="async">` : ''; };
+// lh3 first (fast CDN); if it fails, try Drive's thumbnail endpoint once, then fall back to the icon/placeholder
+document.addEventListener('error', e => {
+  const t = e.target; if (!t || t.tagName !== 'IMG') return;
+  const id = driveId(t.src.replace('lh3.googleusercontent.com/d/', 'x/d/'));
+  if (!t.dataset.fb && id && t.src.includes('lh3.googleusercontent.com')) { t.dataset.fb = '1'; const w = (t.src.match(/=w(\d+)/) || [0, 400])[1]; t.src = `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`; return; }
+  t.classList.add('broken');
+}, true);
+function resizeImage(file, max, q = .82) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', q));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('อ่านรูปไม่ได้')); };
+    im.src = url;
+  });
+}
+async function uploadImage(dataUrl, name) {
+  const res = await fetch(S.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: S.cfg.key, upload: { name, mime: 'image/jpeg', data: dataUrl.split(',')[1] } }) });
+  const js = await res.json(); if (!js.ok) throw new Error(js.error || 'upload failed'); return js.url;
+}
+function photoBox(u, w, emptyText, attrs = '') {
+  const has = !!imgSrc(u, w);
+  const note = has ? (IS_GH || String(u).startsWith('data:') ? '' : `${ic('box')}รูปจาก Google Drive<br>แสดงในแอปบน GitHub`) : `${ic('plus')}${emptyText}`;
+  return `<button class="photo" type="button" ${attrs}><span class="ph-note">${note}</span>${imgTag(u, w)}</button>`;
+}
+function openViewer(u, title) {
+  const id = driveId(u);
+  openSheet(`${head(esc(title), id ? `<a href="https://drive.google.com/file/d/${id}/view" target="_blank" rel="noopener">เปิดใน Google Drive ›</a>` : '')}<div class="viewer">${imgTag(u, 1600)}</div>`, { cls: 'tall' });
+}
+
+/* ============ icons ============ */
+const ICON = {
+  home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',
+  box: '<path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5 12 12l8.5-4.5M12 12v9"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20c1.2-3.6 4.1-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/>',
+  lens: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5 15.5 12M20.5 12 12 15.5M12 20.5 8.5 12M3.5 12 12 8.5"/>',
+  list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".8"/><circle cx="4" cy="12" r=".8"/><circle cx="4" cy="18" r=".8"/>',
+  wrench: '<path d="M14.5 6.5a4 4 0 0 0 5 5l-8.8 8.8a2.1 2.1 0 0 1-3-3L16.5 8.5a4 4 0 0 1-2-2z"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/>',
+  scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M4 12h16"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  arrow: '<path d="M7 17 17 7M9 7h8v8"/>',
+  chev: '<path d="m9 6 6 6-6 6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  cart: '<path d="M4 5h2l2.2 10.5h10L20 8H7"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="17" cy="19" r="1.3"/>',
+  in: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19.5h16"/>',
+  adjust: '<path d="M5 6h9M18 6h1M5 12h3M12 12h7M5 18h11M20 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  tag: '<path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8-9 9z"/><circle cx="8" cy="8" r="1.4"/>',
+  qr: '<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
+  sync: '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
+  copy: '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/>',
+  trash: '<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>'
+};
+const ic = (n, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${ICON[n] || ''}</svg>`;
+
+/* ============ dictionaries ============ */
+const CAT = { PRODUCT: 'สินค้าผลิต', ACCESSORY: 'อุปกรณ์เสริม', LENS: 'เลนส์', MATERIAL: 'วัตถุดิบ', EQUIPMENT: 'เครื่องมือ', LABOR: 'ค่าแรง', RND: 'R&D', OTHER: 'อื่นๆ', ADJUST: 'ยกยอด' };
+const CAT_COLOR = { PRODUCT: 'brand', ACCESSORY: 'dust', LENS: 'rose', MATERIAL: 'sand', EQUIPMENT: 'mute', LABOR: 'mute', RND: 'sage', OTHER: 'mute', ADJUST: 'mute' };
+const PAY = { PAID: 'จ่ายแล้ว', PARTIAL: 'จ่ายบางส่วน', UNPAID: 'ค้างจ่าย' };
+const SST = { PENDING: 'รอส่ง', SHIPPED: 'ส่งแล้ว', DELIVERED: 'ได้รับแล้ว', CANCELLED: 'ยกเลิก' };
+const JST = { RECEIVED: 'รับงาน', IN_PROGRESS: 'กำลังทำ', DONE: 'เสร็จ', DELIVERED: 'ส่งคืนแล้ว', CANCELLED: 'ยกเลิก' };
+const JST_COLOR = { RECEIVED: 'sand', IN_PROGRESS: 'dust', DONE: 'sage', DELIVERED: 'mute', CANCELLED: 'rose' };
+const ADJ = { OPENING: 'ยอดยกมา', COUNT: 'ตรวจนับ', DAMAGED: 'เสียหาย', LOST: 'สูญหาย', USED_INTERNAL: 'ใช้เอง', OTHER: 'อื่นๆ' };
+const UNIT = { pcs: 'ชิ้น', set: 'ชุด', lens: 'ตัว', roll: 'ม้วน', bottle: 'ขวด', unit: 'เครื่อง', machine: 'เครื่อง', job: 'ครั้ง', THB: 'บาท' };
+const DEFAULT_LISTS = {
+  category: Object.keys(CAT), unit: Object.keys(UNIT),
+  channel: ['Walk-in', 'Facebook', 'Instagram', 'LINE', 'eBay', 'Website', 'Shopee', 'Other'],
+  payment: Object.keys(PAY), sale_status: Object.keys(SST), job_status: Object.keys(JST),
+  service: ['Lens MOD', 'Rehousing', 'Gear ring', 'Repair / CLA', 'Custom part', 'Other'],
+  mount: ['Canon FD', 'Nikon F', 'C/Y', 'Leica R', 'Leica M', 'M42', 'OM', 'Minolta SR', 'Konica AR', 'MFT', 'PL', 'EF', 'E', 'Other'],
+  adj_reason: Object.keys(ADJ)
+};
+const ID = { ITEMS: 'item_code', PURCHASES: 'purchase_id', SALES: 'sale_id', ADJUST: 'adj_id', CUSTOMERS: 'customer_id', JOBS: 'job_id', LENSES: 'lens_id' };
+const NUMF = new Set(['cost', 'price', 'min_stock', 'qty', 'unit_cost', 'other_cost', 'total', 'unit_price', 'discount', 'qty_change', 'paid', 'focus_dia', 'focus_w', 'zoom_dia', 'zoom_w', 'iris_dia', 'iris_w', 'move_len', 'simmod_dia', 'service_price', 'sort']);
+const BOOLF = new Set(['track_stock', 'active', 'special_file']);
+const STRF = new Set(['item_code', 'lens_id', 'customer_id', 'legacy_id', 'focal', 'aperture', 'phone', 'order_no']);
+
+/* ============ state ============ */
+const emptyDB = () => ({ ITEMS: [], PURCHASES: [], SALES: [], ADJUST: [], CUSTOMERS: [], JOBS: [], LENSES: [], LISTS: [] });
+const S = {
+  db: emptyDB(), calc: {}, mode: 'local', sync: 'idle', lastPull: ls.get('cnmp.lastPull', 0), device: 'phone',
+  cfg: Object.assign({ url: '', key: '', theme: 'system', device: 'auto' }, ls.get('cnmp.cfg', {})),
+  queue: ls.get('cnmp.queue', []),
+  ui: Object.assign({ stockCat: 'ALL', stockQ: '', lensQ: '', lensBrand: 'ALL', custQ: '', ledger: 'SALES', ledgerQ: '', jobSt: 'OPEN', homeList: 'recent', year: new Date().getFullYear() }, ls.get('cnmp.ui', {}))
+};
+const saveUI = () => ls.set('cnmp.ui', { stockCat: S.ui.stockCat, lensBrand: S.ui.lensBrand, ledger: S.ui.ledger, jobSt: S.ui.jobSt, homeList: S.ui.homeList });
+const saveCfg = () => ls.set('cnmp.cfg', S.cfg);
+
+function normalize(src) {
+  const db = emptyDB();
+  for (const k of Object.keys(db)) {
+    db[k] = (src && Array.isArray(src[k]) ? src[k] : []).map(r => {
+      const o = {};
+      for (const f in r) {
+        const v = r[f];
+        if (NUMF.has(f)) o[f] = v === '' || v == null ? '' : num(v);
+        else if (BOOLF.has(f)) o[f] = v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
+        else o[f] = v == null ? '' : (STRF.has(f) ? String(v) : v);
+      }
+      return o;
+    }).filter(r => k === 'LISTS' || String(r[ID[k]] ?? '') !== '');
+  }
+  return db;
+}
+function lists(name) {
+  const l = S.db.LISTS.filter(r => r.list === name).sort((a, b) => a.sort - b.sort).map(r => String(r.value));
+  return l.length ? l : (DEFAULT_LISTS[name] || []);
+}
+function derive() {
+  const d = S.db, stock = {}, soldQ = {}, item = {}, cust = {}, lens = {};
+  for (const i of d.ITEMS) { stock[i.item_code] = 0; item[i.item_code] = i; }
+  for (const c of d.CUSTOMERS) cust[c.customer_id] = c;
+  for (const l of d.LENSES) lens[l.lens_id] = l;
+  for (const p of d.PURCHASES) stock[p.item_code] = (stock[p.item_code] || 0) + num(p.qty);
+  for (const s of d.SALES) { if (s.status === 'CANCELLED') continue; stock[s.item_code] = (stock[s.item_code] || 0) - num(s.qty); soldQ[s.item_code] = (soldQ[s.item_code] || 0) + num(s.qty); }
+  for (const a of d.ADJUST) stock[a.item_code] = (stock[a.item_code] || 0) + num(a.qty_change);
+  let value = 0; const low = [];
+  for (const i of d.ITEMS) {
+    if (!i.track_stock || i.active === false) continue;
+    const q = stock[i.item_code] || 0;
+    if (q > 0) value += q * num(i.cost);
+    if (q <= num(i.min_stock)) low.push(i);
+  }
+  low.sort((a, b) => (stock[a.item_code] || 0) - (stock[b.item_code] || 0));
+  S.calc = { stock, soldQ, item, cust, lens, value, low };
+}
+const isAdjustItem = code => (S.calc.item[code] || {}).category === 'ADJUST';
+function stockState(i) {
+  if (!i.track_stock) return { k: 'none', t: 'ไม่นับสต๊อก', c: '' };
+  const q = S.calc.stock[i.item_code] || 0;
+  if (q <= 0) return { k: 'bad', t: 'หมด', c: 'bad' };
+  if (q <= num(i.min_stock)) return { k: 'warn', t: 'ใกล้หมด', c: 'warn' };
+  return { k: 'ok', t: 'พร้อมขาย', c: 'ok' };
+}
+function finance(year) {
+  const m = Array.from({ length: 12 }, () => ({ inc: 0, out: 0 })), y = String(year);
+  const add = (date, k, v) => { if (String(date).slice(0, 4) !== y) return; const i = +String(date).slice(5, 7) - 1; if (m[i]) m[i][k] += v; };
+  for (const s of S.db.SALES) if (s.status !== 'CANCELLED' && !isAdjustItem(s.item_code)) add(s.date, 'inc', num(s.total));
+  for (const j of S.db.JOBS) if (j.status !== 'CANCELLED') add(j.date, 'inc', num(j.paid));
+  for (const p of S.db.PURCHASES) if (!isAdjustItem(p.item_code)) add(p.date, 'out', num(p.total));
+  return m;
+}
+function years() {
+  const ys = new Set([new Date().getFullYear()]);
+  for (const r of [...S.db.SALES, ...S.db.PURCHASES, ...S.db.JOBS]) { const y = +String(r.date).slice(0, 4); if (y > 2000) ys.add(y); }
+  return [...ys].sort();
+}
+
+/* ============ buffer: local-first data + background sync ============ */
+let persistT = null;
+function persist() {
+  clearTimeout(persistT);
+  ls.set('cnmp.queue', S.queue);
+  persistT = setTimeout(() => { ls.set(S.mode === 'demo' ? 'cnmp.demo' : 'cnmp.cache', S.db); }, 30);
+}
+function applyOp(db, op) {
+  const arr = db[op.sheet]; if (!arr) return;
+  const key = ID[op.sheet];
+  const i = arr.findIndex(r => String(r[key]) === String(op.id));
+  if (op.action === 'delete') { if (i >= 0) arr.splice(i, 1); return; }
+  if (i >= 0) arr[i] = Object.assign({}, arr[i], op.row); else arr.push(Object.assign({}, op.row));
+}
+function commit(ops, msg) {
+  for (const op of ops) { op.opId = op.opId || rid('OP'); applyOp(S.db, op); }
+  if (S.mode === 'live') S.queue.push(...ops);
+  derive(); persist(); render();
+  if (msg) toast(msg);
+  if (S.mode === 'live') flush();
+}
+const up = (sheet, row) => ({ sheet, action: 'upsert', id: row[ID[sheet]], row });
+const del = (sheet, id) => ({ sheet, action: 'delete', id, row: {} });
+
+let pulling = false;
+async function pull(silent) {
+  if (!S.cfg.url || pulling) return;
+  pulling = true; S.sync = 'pulling'; renderBadge();
+  try {
+    const u = S.cfg.url + (S.cfg.url.includes('?') ? '&' : '?') + 'action=all&key=' + encodeURIComponent(S.cfg.key);
+    const res = await fetch(u, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+    const js = await res.json();
+    if (!js.ok) throw new Error(js.error || 'error');
+    const db = normalize(js.data);
+    for (const op of S.queue) applyOp(db, op);
+    S.db = db; S.lastPull = Date.now(); ls.set('cnmp.lastPull', S.lastPull);
+    S.sync = S.queue.length ? 'pending' : 'ok';
+    derive(); persist(); render(true);
+    if (!silent) toast('ดึงข้อมูลล่าสุดแล้ว');
+  } catch (e) {
+    S.sync = 'offline'; renderBadge();
+    if (!silent) toast('เชื่อมต่อ Google Sheet ไม่ได้ ใช้ข้อมูลในเครื่องไปก่อน');
+  }
+  pulling = false;
+}
+let flushing = false, retryT = null;
+async function flush() {
+  if (S.mode !== 'live' || flushing || !S.queue.length) { renderBadge(); return; }
+  flushing = true; S.sync = 'pushing'; renderBadge();
+  try {
+    const batch = S.queue.slice(0, 40);
+    const res = await fetch(S.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: S.cfg.key, ops: batch }) });
+    const js = await res.json();
+    if (!js.ok) throw new Error(js.error);
+    const done = new Set(js.results.filter(r => r.ok).map(r => r.op));
+    S.queue = S.queue.filter(op => !done.has(op.opId));
+    S.sync = S.queue.length ? 'pending' : 'ok';
+    ls.set('cnmp.queue', S.queue);
+    flushing = false; renderBadge();
+    if (S.queue.length && done.size) return flush();
+    return;
+  } catch (e) {
+    S.sync = 'offline';
+    clearTimeout(retryT); retryT = setTimeout(flush, 15000);
+  }
+  flushing = false; renderBadge();
+}
+window.addEventListener('online', () => { flush(); pull(true); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && S.mode === 'live') { flush(); if (Date.now() - S.lastPull > 60000) pull(true); }
+});
+
+/* ============ theme + device ============ */
+const mqDark = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const t = S.cfg.theme;
+  if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+  const dark = t === 'dark' || (t === 'system' && mqDark.matches);
+  const meta = $('meta[name="theme-color"]'); if (meta) meta.content = dark ? '#121110' : '#E2E6DE';
+}
+mqDark.addEventListener?.('change', applyTheme);
+function detectDevice() {
+  const w = innerWidth, h = innerHeight, coarse = matchMedia('(pointer:coarse)').matches;
+  if (w < 640 || (coarse && Math.min(w, h) < 500)) return 'phone';
+  if (coarse || w < 1100) return 'tablet';
+  return 'pc';
+}
+function applyDevice() {
+  const auto = detectDevice();
+  const dev = S.cfg.device === 'auto' ? auto : S.cfg.device;
+  const changed = dev !== S.device;
+  S.device = dev; S.autoDevice = auto;
+  const html = document.documentElement;
+  html.dataset.device = dev;
+  if (S.cfg.device !== 'auto' && S.cfg.device !== auto) html.dataset.forced = dev; else delete html.dataset.forced;
+  return changed;
+}
+window.addEventListener('resize', debounce(() => { if (applyDevice()) render(); else if (route() === 'home') drawChart(); }, 120));
+
+/* ============ routing / shell ============ */
+const NAV = [
+  ['home', 'หน้าหลัก', 'home'], ['stock', 'คลังสินค้า', 'box'], ['ledger', 'ซื้อ-ขาย', 'list'], ['jobs', 'งาน MOD', 'wrench'],
+  ['customers', 'ลูกค้า', 'user'], ['lens', 'Lens DB', 'lens'], ['setup', 'ตั้งค่า', 'gear']
+];
+const TITLE = { home: 'ภาพรวม', stock: 'คลังสินค้า', ledger: 'รายการซื้อ-ขาย', jobs: 'งาน Lens MOD', customers: 'ลูกค้า', lens: 'Lens Database', setup: 'ตั้งค่า', labels: 'พิมพ์ฉลาก QR' };
+const route = () => { const h = location.hash.replace('#', ''); return TITLE[h] ? h : 'home'; };
+window.addEventListener('hashchange', () => { closeAll(); render(); });
+const needsAttention = () => S.mode === 'local' || (S.mode === 'live' && (S.sync === 'offline' || S.queue.length > 0));
+const badgeHTML = () => needsAttention() ? `<span class="badge ${S.sync === 'offline' || S.mode === 'local' ? 'bad' : ''}"></span>` : '';
+
+function renderShell() {
+  const r = route();
+  $('#rail').innerHTML = `<div class="brand"><span class="mark" role="img" aria-label="CINE MOOD PRODUCT"></span><b>CINE MOOD<br>PRODUCT</b></div>` +
+    NAV.map(([k, t, i]) => `<a href="#${k}" class="${r === k ? 'on' : ''}" ${r === k ? 'aria-current="page"' : ''}>${ic(i)}<span>${t}</span>${k === 'setup' ? badgeHTML() : ''}</a>`).join('') +
+    `<button class="rec-wide" type="button" data-act="record" aria-label="บันทึกรายการใหม่">${ic('plus')}<span>บันทึก</span></button>`;
+  const d = new Date();
+  $('#top').innerHTML = `<span class="mark" role="img" aria-label="CINE MOOD PRODUCT"></span><h1>${TITLE[r]}</h1>
+    <span class="sub num">${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}</span>
+    <button class="icon-btn menu-btn" type="button" data-act="nav" aria-label="เมนูทั้งหมด">${ic('menu')}${badgeHTML()}</button>`;
+  const tab = (k, t, i) => `<button class="tab ${r === k ? 'on' : ''}" type="button" data-go="${k}">${ic(i)}<span>${t}</span></button>`;
+  $('#tabbar').innerHTML = `<div class="tabbar-in">${tab('home', 'หน้าหลัก', 'home')}${tab('stock', 'คลัง', 'box')}
+    <button class="rec" type="button" data-act="record" aria-label="บันทึกรายการใหม่">${ic('plus')}</button>
+    ${tab('customers', 'ลูกค้า', 'user')}${tab('lens', 'เลนส์', 'lens')}</div>`;
+}
+function renderBadge() {
+  // status lives on the settings entry only (rail item + phone menu button)
+  const set = (el) => { if (!el) return; const b = el.querySelector('.badge'); if (b) b.remove(); if (needsAttention()) el.insertAdjacentHTML('beforeend', badgeHTML()); };
+  set($('#rail a[href="#setup"]')); set($('.menu-btn'));
+  if (route() === 'setup') { const s = $('#syncStatus'); if (s) s.innerHTML = syncStatusHTML(); }
+}
+let lastRoute = '';
+function render(fromSync) {
+  const r = route();
+  if (fromSync && stack.length) { renderShell(); fillLists(); return; }
+  renderShell();
+  const v = $('#view');
+  v.innerHTML = (VIEWS[r] || VIEWS.home)();
+  fillLists();
+  if (r === 'home') drawChart();
+  lastRoute = r;
+}
+function fillLists() {
+  const r = route();
+  const f = LISTS_FILL[r]; if (f) f();
+}
+
+/* ============ views ============ */
+const VIEWS = {}, LISTS_FILL = {};
+function banner() {
+  if (S.mode === 'demo') return `<div class="banner no-print"><span>โหมดตัวอย่าง: ข้อมูลจากระบบเดิม แก้ไขได้ แต่เก็บไว้ในเครื่องนี้เท่านั้น</span><button type="button" data-go="setup">เชื่อม Sheet</button></div>`;
+  if (S.mode === 'local') return `<div class="banner no-print"><span>ยังไม่ได้เชื่อม Google Sheet ข้อมูลอยู่ในเครื่องนี้เท่านั้น</span><button type="button" data-go="setup">ตั้งค่า</button></div>`;
+  return '';
+}
+
+VIEWS.home = () => {
+  const now = new Date(), y = S.ui.year, m = finance(y), thisY = y === now.getFullYear();
+  const mi = thisY ? now.getMonth() : 11, cur = m[mi];
+  const tot = m.reduce((a, x) => ({ inc: a.inc + x.inc, out: a.out + x.out }), { inc: 0, out: 0 });
+  const openJobs = S.db.JOBS.filter(j => ['RECEIVED', 'IN_PROGRESS', 'DONE'].includes(j.status)).length;
+  const ys = years(), yi = ys.indexOf(y);
+  const hl = S.ui.homeList;
+  return `${S.device === 'phone' ? banner() : ''}<section class="home">
+    <div class="tile t-brand h-hero">
+      <span class="lbl">รายรับ${thisY ? 'ปีนี้' : 'ทั้งปี'} · ${y}</span>
+      <div class="huge num">${fmt(tot.inc)}</div>
+      <div class="split"><span>${MON_TH[mi]}${thisY ? ' (เดือนนี้)' : ''}<b>${baht(cur.inc)}</b></span><span>รายจ่าย<b>${baht(tot.out)}</b></span><span>สุทธิ<b>${baht(tot.inc - tot.out)}</b></span></div>
+    </div>
+    <div class="h-stats">
+      <button class="tile t-card" type="button" data-go="stock"><span class="lbl">มูลค่าสต๊อก</span><div class="big">${S.calc.value >= 100000 ? fmt(S.calc.value / 1000) + 'k' : fmt(S.calc.value)}</div><span class="sub muted">บาท (ทุน)</span></button>
+      <button class="tile t-sand" type="button" data-act="lowstock"><span class="lbl">ใกล้หมด</span><div class="big">${S.calc.low.length}</div><span class="sub">รายการ</span></button>
+      <button class="tile t-dust" type="button" data-go="jobs"><span class="lbl">งานค้าง</span><div class="big">${openJobs}</div><span class="sub">Lens MOD</span></button>
+    </div>
+    <div class="card h-chart">
+      <div class="card-h"><h2>รายรับ–รายจ่าย ${y}</h2>
+        <div class="seg"><button type="button" data-year="${ys[yi - 1] || ''}" ${yi > 0 ? '' : 'disabled'} aria-label="ปีก่อน">‹</button><button type="button" class="on num">${y}</button><button type="button" data-year="${ys[yi + 1] || ''}" ${yi < ys.length - 1 ? '' : 'disabled'} aria-label="ปีถัดไป">›</button></div></div>
+      <div class="chart-box" id="chartBox"></div>
+      <div class="legend"><span><i style="background:var(--bar-in)"></i>รายรับ (ขาย + งาน)</span><span><i style="background:var(--bar-out)"></i>รายจ่าย (ซื้อเข้า)</span></div>
+    </div>
+    <div class="card flush h-list">
+      <div class="card-h"><h2>${S.device === 'pc' ? 'ความเคลื่อนไหวล่าสุด' : ''}</h2>
+        <div class="seg"><button type="button" class="${hl === 'recent' ? 'on' : ''}" data-hlist="recent">ล่าสุด</button><button type="button" class="${hl === 'low' ? 'on' : ''}" data-hlist="low">ต้องเติม ${S.calc.low.length}</button></div>
+        <a class="lbl" href="#${hl === 'low' && S.device !== 'pc' ? 'stock' : 'ledger'}" ${hl === 'low' && S.device !== 'pc' ? 'data-act="lowstock"' : ''} style="text-decoration:none">ทั้งหมด ›</a></div>
+      <div class="list scroll" id="homeList"></div>
+    </div>
+    <div class="card flush h-low">
+      <div class="card-h"><h2>ต้องเติมของ (${S.calc.low.length})</h2><a class="lbl" href="#stock" data-act="lowstock" style="text-decoration:none">ทั้งหมด ›</a></div>
+      <div class="list scroll" id="homeLow"></div>
+    </div>
+  </section>`;
+};
+function recentRows(n = 40) {
+  return [
+    ...S.db.SALES.map(s => ({ d: s.date, k: 'S', t: s.item_name || (S.calc.item[s.item_code] || {}).name, a: num(s.total), q: s.qty, id: s.sale_id, who: (S.calc.cust[s.customer_id] || {}).name })),
+    ...S.db.PURCHASES.map(p => ({ d: p.date, k: 'P', t: p.item_name || (S.calc.item[p.item_code] || {}).name, a: -num(p.total), q: p.qty, id: p.purchase_id, who: p.supplier })),
+    ...S.db.JOBS.map(j => ({ d: j.date, k: 'J', t: `${j.service} · ${j.lens_name}`, a: num(j.paid), id: j.job_id, who: (S.calc.cust[j.customer_id] || {}).name }))
+  ].sort((a, b) => String(b.d).localeCompare(String(a.d)) || String(b.id).localeCompare(String(a.id))).slice(0, n);
+}
+const recentRowHTML = r => `<button class="row" type="button" data-open="${r.k === 'S' ? 'SALES' : r.k === 'P' ? 'PURCHASES' : 'JOBS'}:${esc(r.id)}">
+  <span class="ic bg-${r.k === 'S' ? 'brand' : r.k === 'P' ? 'mute' : 'dust'}">${ic(r.k === 'S' ? 'cart' : r.k === 'P' ? 'in' : 'wrench')}</span>
+  <span class="body"><span class="t">${esc(r.t)}</span><span class="m">${dshort(r.d)}${r.q ? ` · ×${fmtQ(r.q)}` : ''}${r.who ? ` · ${esc(r.who)}` : ''}</span></span>
+  <span class="r num" style="color:${r.a < 0 ? 'var(--muted)' : 'var(--fg)'}">${r.a < 0 ? '−' : '+'}${fmt(Math.abs(r.a))}</span></button>`;
+LISTS_FILL.home = () => {
+  const el = $('#homeList'); if (!el) return;
+  const showLow = S.ui.homeList === 'low' && S.device !== 'pc';
+  const low = S.calc.low.map(itemRow).join('') || `<div class="empty"><b>สต๊อกครบ</b>ไม่มีสินค้าต่ำกว่าจำนวนขั้นต่ำ</div>`;
+  el.innerHTML = showLow ? low : (recentRows().map(recentRowHTML).join('') || `<div class="empty"><b>ยังไม่มีรายการ</b>กดปุ่ม + เพื่อบันทึกการขายหรือซื้อเข้า</div>`);
+  const lw = $('#homeLow'); if (lw) lw.innerHTML = low;
+};
+function drawChart() {
+  const box = $('#chartBox'); if (!box || !box.clientWidth || !box.clientHeight) return;
+  const m = finance(S.ui.year), now = new Date(), curIdx = S.ui.year === now.getFullYear() ? now.getMonth() : -1;
+  const W = box.clientWidth, H = box.clientHeight, L = 34, R = 2, T = 6, B = 18;
+  const max = Math.max(1, ...m.map(x => Math.max(x.inc, x.out)));
+  const step = niceStep(max / (H > 150 ? 4 : 2)), top = Math.ceil(max / step) * step;
+  const sy = v => T + (H - T - B) * (1 - v / top);
+  const gw = (W - L - R) / 12, bw = Math.max(3, Math.min(14, gw / 2.8));
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="กราฟรายรับรายจ่ายรายเดือน">`;
+  for (let v = 0; v <= top + 1e-9; v += step) {
+    s += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--grid)"/>`;
+    s += `<text x="${L - 6}" y="${sy(v) + 3}" text-anchor="end">${v >= 1000 ? trimNum(v / 1000) + 'k' : fmt(v)}</text>`;
+  }
+  m.forEach((x, i) => {
+    const cx = L + gw * i + gw / 2;
+    s += `<rect x="${cx - bw - 1}" y="${sy(x.inc)}" width="${bw}" height="${Math.max(0, sy(0) - sy(x.inc))}" rx="2" fill="var(--bar-in)"><title>${MON[i]} รายรับ ${baht(x.inc)}</title></rect>`;
+    s += `<rect x="${cx + 1}" y="${sy(x.out)}" width="${bw}" height="${Math.max(0, sy(0) - sy(x.out))}" rx="2" fill="var(--bar-out)"><title>${MON[i]} รายจ่าย ${baht(x.out)}</title></rect>`;
+    s += `<text x="${cx}" y="${H - 4}" text-anchor="middle" ${i === curIdx ? 'style="fill:var(--fg)"' : ''}>${gw < 30 ? MON[i][0] : MON[i]}</text>`;
+  });
+  box.innerHTML = s + '</svg>';
+}
+function niceStep(x) { const p = Math.pow(10, Math.floor(Math.log10(x || 1))); const f = x / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
+
+function itemRow(i) {
+  const st = stockState(i), q = S.calc.stock[i.item_code] || 0;
+  return `<button class="row" type="button" data-item="${esc(i.item_code)}">
+    <span class="ic ${i.image_url ? 'ph ' : ''}bg-${CAT_COLOR[i.category] || 'mute'}">${ic(i.category === 'LENS' ? 'lens' : i.category === 'MATERIAL' ? 'tag' : 'box')}${imgTag(i.image_url, 120)}</span>
+    <span class="body"><span class="t">${esc(i.name)}</span><span class="m">${esc(i.item_code)} · ${CAT[i.category] || i.category}${i.active === false ? ' · ปิดใช้' : ''}</span></span>
+    <span class="c">${fmt(i.cost)}</span><span class="c">${fmt(i.price)}</span><span class="c w">${i.track_stock && q > 0 ? fmt(q * num(i.cost)) : '—'}</span>
+    <span class="r" style="min-width:84px">${i.track_stock ? `<span class="q num" style="color:${st.k === 'bad' ? 'var(--bad)' : 'var(--fg)'}">${fmtQ(q)}</span><span class="st"><span class="dot ${st.c}"></span>${st.t}</span>` : `<span class="rs">ไม่นับสต๊อก</span>`}</span>
+  </button>`;
+}
+VIEWS.stock = () => {
+  const items = S.db.ITEMS, cat = S.ui.stockCat;
+  const counts = {}; for (const i of items) counts[i.category] = (counts[i.category] || 0) + 1;
+  const chip = (k, t, n) => `<button class="chip ${cat === k ? 'on' : ''}" type="button" data-cat="${k}">${t}${n != null ? `<span class="n">${n}</span>` : ''}</button>`;
+  return `<div class="toolbar"><label class="search">${ic('search')}<input id="stockQ" type="search" placeholder="ค้นหา ชื่อ / รหัส" value="${esc(S.ui.stockQ)}" autocomplete="off"></label>
+      <button class="btn icon-only" type="button" data-act="scan-stock" aria-label="สแกน QR">${ic('scan')}</button>
+      <button class="btn pri" type="button" data-act="new-item">${ic('plus')}<span class="hide-phone">สินค้าใหม่</span></button>
+      <a class="btn icon-only" href="#labels" aria-label="พิมพ์ฉลาก QR">${ic('qr')}</a></div>
+    <div class="chips">${chip('ALL', 'ทั้งหมด', items.length)}${chip('LOW', 'ใกล้หมด', S.calc.low.length)}${chip('TRACK', 'นับสต๊อก')}${Object.keys(CAT).filter(c => counts[c]).map(c => chip(c, CAT[c], counts[c])).join('')}</div>
+    <div class="summary" id="stockSum"></div>
+    <div class="list scroll" id="stockList"></div>`;
+};
+LISTS_FILL.stock = () => {
+  const q = S.ui.stockQ.trim().toLowerCase(), cat = S.ui.stockCat;
+  const list = S.db.ITEMS.filter(i => {
+    if (cat === 'LOW') { if (!i.track_stock || i.active === false || (S.calc.stock[i.item_code] || 0) > num(i.min_stock)) return false; }
+    else if (cat === 'TRACK') { if (!i.track_stock) return false; }
+    else if (cat !== 'ALL' && i.category !== cat) return false;
+    return !q || (i.name + ' ' + i.item_code + ' ' + (CAT[i.category] || '')).toLowerCase().includes(q);
+  }).sort((a, b) => (b.track_stock - a.track_stock) || ((a.active === false) - (b.active === false)) || String(a.category).localeCompare(b.category) || a.name.localeCompare(b.name));
+  const tracked = list.filter(i => i.track_stock);
+  const units = tracked.reduce((a, i) => a + Math.max(0, S.calc.stock[i.item_code] || 0), 0);
+  const val = tracked.reduce((a, i) => a + Math.max(0, S.calc.stock[i.item_code] || 0) * num(i.cost), 0);
+  $('#stockSum').innerHTML = `<span><b>${list.length}</b> รายการ</span><span>คงเหลือ <b>${fmt(units)}</b> หน่วย</span><span>มูลค่าทุน <b>${baht(val)}</b></span>`;
+  $('#stockList').innerHTML = (list.length ? `<div class="list-head"><span class="h-body">สินค้า</span><span class="c">ทุน</span><span class="c">ราคาขาย</span><span class="c w">มูลค่าคงเหลือ</span><span class="h-r">คงเหลือ</span></div>` + list.map(itemRow).join('') : `<div class="empty"><b>ไม่พบสินค้า</b>ลองค้นด้วยคำอื่น หรือเพิ่มสินค้าใหม่</div>`);
+};
+
+const LEDGER = {
+  SALES: { sheet: 'SALES', id: 'sale_id', amt: r => num(r.total), icon: 'cart', col: 'brand', sub: r => `×${fmtQ(r.qty)} @ ${fmt(r.unit_price)}${r.customer_id ? ' · ' + ((S.calc.cust[r.customer_id] || {}).name || r.customer_id) : ''}${r.channel ? ' · ' + r.channel : ''}` },
+  PURCHASES: { sheet: 'PURCHASES', id: 'purchase_id', amt: r => num(r.total), icon: 'in', col: 'mute', sub: r => `×${fmtQ(r.qty)} @ ${fmt(r.unit_cost)}${num(r.other_cost) ? ` + ${fmt(r.other_cost)}` : ''}${r.supplier ? ' · ' + r.supplier : ''}` },
+  ADJUST: { sheet: 'ADJUST', id: 'adj_id', amt: r => num(r.qty_change), icon: 'adjust', col: 'sand', qty: true, sub: r => `${ADJ[r.reason] || r.reason}${r.note ? ' · ' + r.note : ''}` }
+};
+VIEWS.ledger = () => {
+  const tab = S.ui.ledger;
+  const seg = (k, t) => `<button type="button" class="${tab === k ? 'on' : ''}" data-ledger="${k}">${t}</button>`;
+  return `<div class="toolbar"><div class="seg">${seg('SALES', 'ขาย')}${seg('PURCHASES', 'ซื้อเข้า')}${seg('ADJUST', 'ปรับ')}</div>
+    <label class="search">${ic('search')}<input id="ledgerQ" type="search" placeholder="ค้นหา" value="${esc(S.ui.ledgerQ)}" autocomplete="off"></label></div>
+    <div class="summary" id="ledgerSum"></div>
+    <div class="list scroll" id="ledgerList"></div>`;
+};
+LISTS_FILL.ledger = () => {
+  const conf = LEDGER[S.ui.ledger], q = S.ui.ledgerQ.trim().toLowerCase();
+  const rows = S.db[conf.sheet].filter(r => !q || (String(r.item_name || '') + ' ' + r.item_code + ' ' + (r.supplier || '') + ' ' + ((S.calc.cust[r.customer_id] || {}).name || '') + ' ' + (r.note || '')).toLowerCase().includes(q))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b[conf.id]).localeCompare(String(a[conf.id])));
+  const groups = new Map(); for (const r of rows) { const k = ymKey(r.date); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); }
+  const sum = rows.reduce((a, r) => a + conf.amt(r), 0);
+  $('#ledgerSum').innerHTML = `<span><b>${rows.length}</b> รายการ</span>${conf.qty ? '' : `<span>รวม <b>${baht(sum)}</b></span>`}`;
+  $('#ledgerList').innerHTML = groups.size ? [...groups].map(([ym, rs]) => {
+    const [yy, mm] = ym.split('-');
+    return `<div class="month-h"><span class="lbl">${MON[+mm - 1] || '—'} ${yy}</span><span class="num">${conf.qty ? rs.length + ' รายการ' : baht(rs.reduce((a, r) => a + conf.amt(r), 0))}</span></div>` +
+      rs.map(r => `<button class="row" type="button" data-open="${conf.sheet}:${esc(r[conf.id])}"><span class="ic bg-${conf.col}">${ic(conf.icon)}</span>
+        <span class="body"><span class="t" ${r.status === 'CANCELLED' ? 'style="text-decoration:line-through"' : ''}>${esc(r.item_name || (S.calc.item[r.item_code] || {}).name || r.item_code)}</span><span class="m">${dshort(r.date)} · ${esc(conf.sub(r))}</span></span>
+        <span class="r num">${conf.qty ? (conf.amt(r) > 0 ? '+' : '') + fmtQ(conf.amt(r)) : fmt(conf.amt(r))}</span></button>`).join('');
+  }).join('') : `<div class="empty"><b>ไม่มีรายการ</b>กดปุ่ม + เพื่อบันทึกใหม่</div>`;
+};
+
+function jobRow(j) {
+  const c = S.calc.cust[j.customer_id], due = num(j.price) - num(j.paid);
+  return `<button class="row" type="button" data-open="JOBS:${esc(j.job_id)}">
+    <span class="ic bg-${JST_COLOR[j.status] || 'mute'}">${ic('wrench')}</span>
+    <span class="body"><span class="t">${esc(j.lens_name || '—')}</span><span class="m">${esc(j.service)} · ${c ? esc(c.name) : 'ไม่ระบุลูกค้า'} · ${dshort(j.date)}${j.due_date ? ' → ' + dshort(j.due_date) : ''}</span></span>
+    <span class="r"><span class="tag bg-${JST_COLOR[j.status] || 'mute'}">${JST[j.status] || j.status}</span><span class="rs" style="margin-top:3px">${baht(num(j.price))}${due > 0 ? ` · ค้าง ${fmt(due)}` : ''}</span></span></button>`;
+}
+VIEWS.jobs = () => {
+  const all = S.db.JOBS, f = S.ui.jobSt;
+  const cnt = k => all.filter(j => j.status === k).length;
+  const open = all.filter(j => ['RECEIVED', 'IN_PROGRESS', 'DONE'].includes(j.status)).length;
+  const owed = all.filter(j => j.status !== 'CANCELLED').reduce((a, j) => a + Math.max(0, num(j.price) - num(j.paid)), 0);
+  const chip = (k, t, n) => `<button class="chip ${f === k ? 'on' : ''}" type="button" data-jobst="${k}">${t}<span class="n">${n}</span></button>`;
+  return `<div class="trio"><div class="tile t-sand"><span class="lbl">รับงาน</span><div class="big">${cnt('RECEIVED')}</div></div>
+      <div class="tile t-dust"><span class="lbl">กำลังทำ</span><div class="big">${cnt('IN_PROGRESS')}</div></div>
+      <div class="tile t-card"><span class="lbl">ค้างชำระ</span><div class="big">${baht(owed)}</div></div></div>
+    <div class="toolbar"><div class="chips" style="flex:1;margin-right:0;padding-right:0">${chip('OPEN', 'ยังไม่ปิด', open)}${Object.keys(JST).map(k => chip(k, JST[k], cnt(k))).join('')}${chip('ALL', 'ทั้งหมด', all.length)}</div>
+      <button class="btn pri" type="button" data-act="new-job">${ic('plus')}<span class="hide-phone">รับงาน</span></button></div>
+    <div class="list scroll" id="jobList"></div>`;
+};
+LISTS_FILL.jobs = () => {
+  const f = S.ui.jobSt, all = S.db.JOBS.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const list = f === 'OPEN' ? all.filter(j => ['RECEIVED', 'IN_PROGRESS', 'DONE'].includes(j.status)) : f === 'ALL' ? all : all.filter(j => j.status === f);
+  $('#jobList').innerHTML = list.length ? list.map(jobRow).join('') : `<div class="empty"><b>ไม่มีงานในสถานะนี้</b>รับงานใหม่ได้จากปุ่มด้านบน</div>`;
+};
+
+function custStats(id) {
+  const sales = S.db.SALES.filter(s => s.customer_id === id && s.status !== 'CANCELLED');
+  const jobs = S.db.JOBS.filter(j => j.customer_id === id && j.status !== 'CANCELLED');
+  const orders = new Set(sales.map(s => s.order_no || s.sale_id)).size;
+  const spend = sales.reduce((a, s) => a + num(s.total), 0) + jobs.reduce((a, j) => a + num(j.paid), 0);
+  const last = [...sales, ...jobs].map(r => r.date).sort().pop() || '';
+  return { sales, jobs, orders, spend, last };
+}
+VIEWS.customers = () => `<div class="toolbar"><label class="search">${ic('search')}<input id="custQ" type="search" placeholder="ค้นหาชื่อ เบอร์ LINE หรือ IG" value="${esc(S.ui.custQ)}" autocomplete="off"></label>
+    <button class="btn pri" type="button" data-act="new-customer">${ic('plus')}<span class="hide-phone">ลูกค้าใหม่</span></button></div>
+  <div class="summary" id="custSum"></div>
+  <div class="list scroll" id="custList"></div>`;
+LISTS_FILL.customers = () => {
+  const q = S.ui.custQ.trim().toLowerCase();
+  const rows = S.db.CUSTOMERS.map(c => ({ c, s: custStats(c.customer_id) }))
+    .filter(({ c }) => !q || [c.name, c.nickname, c.phone, c.email, c.line_id, c.facebook, c.instagram, c.customer_id, c.country, c.tags].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => String(b.s.last || b.c.created_at).localeCompare(String(a.s.last || a.c.created_at)));
+  $('#custSum').innerHTML = `<span><b>${rows.length}</b> ราย</span><span>ยอดซื้อรวม <b>${baht(rows.reduce((a, r) => a + r.s.spend, 0))}</b></span>`;
+  $('#custList').innerHTML = rows.length ? `<div class="list-head"><span class="h-body">ลูกค้า</span><span class="c">ช่องทาง</span><span class="c">ล่าสุด</span><span class="h-r">ยอดซื้อ</span></div>` + rows.map(({ c, s }) => `<button class="row" type="button" data-cust="${esc(c.customer_id)}">
+      <span class="ic bg-rose">${esc((c.nickname || c.name || '?').trim().charAt(0).toUpperCase())}</span>
+      <span class="body"><span class="t">${esc(c.name)}${c.nickname ? ` <span class="muted">(${esc(c.nickname)})</span>` : ''}</span><span class="m">${esc([c.customer_id, c.phone, c.line_id && 'LINE ' + c.line_id, c.instagram && 'IG ' + c.instagram, c.facebook && 'FB ' + c.facebook].filter(Boolean).join(' · '))}</span></span>
+      <span class="c">${esc(c.source || '—')}</span><span class="c">${s.last ? dshort(s.last) : '—'}</span>
+      <span class="r" style="min-width:84px"><span class="num">${fmt(s.spend)}</span><span class="rs">${s.orders + s.jobs.length} ครั้ง</span></span></button>`).join('')
+    : `<div class="empty"><b>${q ? 'ไม่พบลูกค้า' : 'ยังไม่มีลูกค้า'}</b>เพิ่มลูกค้าใหม่ แล้วเลือกตอนบันทึกการขายหรือรับงาน</div>`;
+};
+
+const lensTitle = l => l.name || [l.brand, l.series, l.focal && l.focal + 'mm', l.aperture && 'f/' + l.aperture].filter(Boolean).join(' ');
+const mm = v => num(v) ? trimNum(v) : '—';
+VIEWS.lens = () => {
+  const all = S.db.LENSES, b = S.ui.lensBrand;
+  const counts = {}; for (const l of all) counts[l.brand || 'อื่นๆ'] = (counts[l.brand || 'อื่นๆ'] || 0) + 1;
+  const chip = (k, t, n) => `<button class="chip ${b === k ? 'on' : ''}" type="button" data-brand="${esc(k)}">${esc(t)}<span class="n">${n}</span></button>`;
+  return `<div class="toolbar"><label class="search">${ic('search')}<input id="lensQ" type="search" placeholder="ค้นหา เช่น nFD 50, 66.4" value="${esc(S.ui.lensQ)}" autocomplete="off"></label>
+    <button class="btn pri" type="button" data-act="new-lens">${ic('plus')}<span class="hide-phone">เลนส์ใหม่</span></button></div>
+  <div class="chips">${chip('ALL', 'ทั้งหมด', all.length)}${Object.keys(counts).sort((x, y) => counts[y] - counts[x]).map(k => chip(k, k, counts[k])).join('')}</div>
+  <div class="summary" id="lensSum"></div>
+  <div class="list scroll" id="lensList"></div>`;
+};
+LISTS_FILL.lens = () => {
+  const q = S.ui.lensQ.trim().toLowerCase(), b = S.ui.lensBrand;
+  const list = S.db.LENSES.filter(l => (b === 'ALL' || (l.brand || 'อื่นๆ') === b) && (!q || [l.name, l.brand, l.series, l.mount, l.focal, l.aperture, l.lens_id, l.note, l.focus_dia, l.zoom_dia, l.iris_dia].join(' ').toLowerCase().includes(q)))
+    .sort((x, y) => String(x.brand).localeCompare(y.brand) || String(x.series).localeCompare(y.series) || (parseFloat(x.focal) || 0) - (parseFloat(y.focal) || 0));
+  $('#lensSum').innerHTML = `<span><b>${list.length}</b> รุ่น</span><span>วัดขนาดแล้ว <b>${list.filter(l => num(l.focus_dia) > 0).length}</b></span>`;
+  $('#lensList').innerHTML = list.length ? `<div class="list-head"><span class="h-body">รุ่น</span><span class="c">Focus กว้าง</span><span class="c">Zoom/Iris Ø</span><span class="c">Move</span><span class="h-r">Focus Ø</span></div>` + list.map(l => `<button class="row" type="button" data-lens="${esc(l.lens_id)}">
+      <span class="ic ${l.photo_url ? 'ph ' : ''}bg-${l.type === 'ZOOM' ? 'dust' : 'rose'}">${esc(String(l.focal || '?').split('-')[0])}${imgTag(l.photo_url, 120)}</span>
+      <span class="body"><span class="t">${esc(lensTitle(l))}</span><span class="m">${esc([l.lens_id, l.mount, l.type === 'ZOOM' ? 'Zoom' : 'Prime', l.special_file ? 'Special file' : '', l.service_price ? '฿' + fmt(l.service_price) : ''].filter(Boolean).join(' · '))}</span></span>
+      <span class="c">${mm(l.focus_w)}</span><span class="c">${num(l.zoom_dia) ? mm(l.zoom_dia) : mm(l.iris_dia)}</span><span class="c">${mm(l.move_len)}</span>
+      <span class="r" style="min-width:84px">${num(l.focus_dia) ? `<span class="q num">Ø${trimNum(l.focus_dia)}</span><span class="rs">FOCUS${num(l.focus_w) ? ' × ' + trimNum(l.focus_w) : ''}</span>` : `<span class="rs">${l.special_file ? 'SPECIAL FILE' : 'ยังไม่วัด'}</span>`}</span></button>`).join('')
+    : `<div class="empty"><b>ไม่พบเลนส์</b>ลองคำค้นอื่น หรือเพิ่มรุ่นใหม่</div>`;
+};
+
+function syncStatusHTML() {
+  if (S.mode === 'demo') return `<span class="dot"></span>โหมดตัวอย่าง (ข้อมูลระบบเดิม เก็บในเครื่องนี้)`;
+  if (S.mode === 'local') return `<span class="dot bad"></span>ยังไม่เชื่อมต่อ ข้อมูลอยู่ในเครื่องนี้เท่านั้น`;
+  const t = S.lastPull ? new Date(S.lastPull).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '—';
+  const map = { ok: ['ok', 'ซิงค์แล้ว'], idle: ['ok', 'ซิงค์แล้ว'], pulling: ['warn', 'กำลังโหลด…'], pushing: ['warn', 'กำลังบันทึก…'], pending: ['warn', `รอส่ง ${S.queue.length} รายการ`], offline: ['bad', `ออฟไลน์${S.queue.length ? ` · รอส่ง ${S.queue.length}` : ''}`] };
+  const [c, txt] = map[S.sync] || map.ok;
+  return `<span class="dot ${c}"></span>${txt}<span class="muted" style="margin-left:auto">ดึงล่าสุด ${t}</span>`;
+}
+VIEWS.setup = () => {
+  const seg = (attr, cur, k, l) => `<button type="button" class="${cur === k ? 'on' : ''}" ${attr}="${k}">${l}</button>`;
+  const devName = { phone: 'มือถือ', tablet: 'iPad', pc: 'PC' };
+  return `<div class="setup">
+    <section class="card"><div class="card-h"><h2>การแสดงผล</h2></div>
+      <div class="opt-row"><span>ธีม</span><div class="seg">${seg('data-theme-set', S.cfg.theme, 'system', 'ตามระบบ')}${seg('data-theme-set', S.cfg.theme, 'dark', 'มืด')}${seg('data-theme-set', S.cfg.theme, 'light', 'สว่าง')}</div></div>
+      <div class="opt-row"><span>อุปกรณ์</span><div class="seg">${seg('data-device-set', S.cfg.device, 'auto', 'อัตโนมัติ')}${seg('data-device-set', S.cfg.device, 'phone', 'มือถือ')}${seg('data-device-set', S.cfg.device, 'tablet', 'iPad')}${seg('data-device-set', S.cfg.device, 'pc', 'PC')}</div></div>
+      <p class="muted" style="margin:0;font-size:13px">ตรวจพบ: ${devName[S.autoDevice]} (${innerWidth}×${innerHeight})${S.cfg.device === 'auto' ? '' : ` · กำลังใช้แบบ ${devName[S.device]}`}</p>
+    </section>
+    <section class="card"><div class="card-h"><h2>Google Sheet</h2></div>
+      <div class="status" id="syncStatus">${syncStatusHTML()}</div>
+      <form id="cfgForm" class="fgrid">
+        <div class="f full"><label for="cfgUrl">Web app URL (Apps Script &gt; Deploy)</label><input class="in" id="cfgUrl" name="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(S.cfg.url)}" autocomplete="off"></div>
+        <div class="f full"><label for="cfgKey">API KEY</label><input class="in num" id="cfgKey" name="key" placeholder="ได้จากการรัน setup() ใน Apps Script" value="${esc(S.cfg.key)}" autocomplete="off"></div>
+        <div class="actions f full" style="flex-direction:row"><button class="btn pri grow" type="submit">บันทึกและเชื่อมต่อ</button>${S.mode === 'live' ? `<button class="btn icon-only" type="button" data-act="pull" aria-label="ดึงข้อมูลใหม่">${ic('sync')}</button><button class="btn" type="button" data-act="disconnect">ยกเลิก</button>` : ''}</div>
+      </form>
+    </section>
+    <section class="card"><div class="card-h"><h2>ข้อมูล</h2></div>
+      <div class="summary"><span>สินค้า <b>${S.db.ITEMS.length}</b></span><span>ขาย <b>${S.db.SALES.length}</b></span><span>ซื้อ <b>${S.db.PURCHASES.length}</b></span><span>ลูกค้า <b>${S.db.CUSTOMERS.length}</b></span><span>งาน <b>${S.db.JOBS.length}</b></span><span>เลนส์ <b>${S.db.LENSES.length}</b></span></div>
+      <div class="about"><div class="logo-full" role="img" aria-label="CINE MOOD PRODUCT"></div><div class="actions" style="flex-direction:column;align-items:stretch;flex:1">
+        ${S.mode === 'demo' ? `<button class="btn" type="button" data-act="reset-demo">รีเซ็ตข้อมูลตัวอย่าง</button>` : `<button class="btn" type="button" data-act="backup">สำรองข้อมูล (.json)</button>`}
+        <a class="btn" href="#labels">${ic('qr')} พิมพ์ฉลาก QR</a></div></div>
+    </section></div>`;
+};
+VIEWS.labels = () => {
+  const items = S.db.ITEMS.filter(i => i.track_stock && i.active !== false);
+  return `<div class="toolbar no-print"><a class="btn" href="#stock">‹ กลับ</a><button class="btn pri" type="button" data-act="print">พิมพ์</button><span class="muted" style="font-size:13px;min-width:0">${items.length} รายการ · ติดที่กล่องหรือชั้นวาง แล้วสแกนด้วยมือถือ</span></div>
+  <div class="labels scroll" id="labelGrid">${items.map(i => `<div class="label"><div class="qr" data-qr="${esc(i.item_code)}"></div><b>${esc(i.item_code)}</b><span>${esc(i.name)}</span></div>`).join('')}</div>`;
+};
+LISTS_FILL.labels = () => fillQR($('#labelGrid'));
+
+/* ============ QR (lazy) ============ */
+const loaded = {};
+function loadScript(src) {
+  return loaded[src] || (loaded[src] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = () => { delete loaded[src]; rej(); }; document.head.appendChild(s); }));
+}
+const QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+function qrSVG(text) {
+  const q = qrcode(0, 'M'); q.addData(String(text)); q.make();
+  const n = q.getModuleCount(); let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+  return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges" role="img" aria-label="QR ${esc(text)}"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`;
+}
+function fillQR(root) {
+  if (!root) return;
+  const go = () => root.querySelectorAll('[data-qr]').forEach(el => { if (!el.firstChild) el.innerHTML = qrSVG(el.dataset.qr); });
+  if (typeof qrcode === 'function') go(); else loadScript(QR_LIB).then(go).catch(() => { });
+}
+let scanner = null;
+function openScanner(onCode, title = 'สแกน QR / บาร์โค้ด') {
+  const sh = openSheet(`${head(title, 'เล็งกล้องไปที่ฉลาก หรือพิมพ์รหัสเอง')}
+    <div class="panel-b"><div id="qr-reader"></div><p class="muted" id="qrMsg" style="margin:0;font-size:13px">กำลังเปิดกล้อง…</p></div>
+    <form id="manualCode" class="panel-f" style="flex-direction:row"><input class="in num" name="code" placeholder="พิมพ์รหัสสินค้า" autocomplete="off"><button class="btn pri" type="submit">ตกลง</button></form>`, {
+    onClose: () => { if (scanner) { const s = scanner; scanner = null; s.stop().catch(() => { }).finally(() => { try { s.clear(); } catch (e) { } }); } }
+  });
+  const done = code => { code = String(code).trim(); if (!code) return; closeSheet(sh); setTimeout(() => onCode(code), 60); };
+  $('#manualCode', sh).addEventListener('submit', e => { e.preventDefault(); done(new FormData(e.target).get('code')); });
+  loadScript('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js').then(() => {
+    if (!document.body.contains(sh)) return;
+    scanner = new Html5Qrcode('qr-reader');
+    return scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 220, height: 220 } }, txt => done(txt), () => { })
+      .then(() => { const m = $('#qrMsg', sh); if (m) m.textContent = 'พร้อมสแกน'; });
+  }).catch(() => { const m = $('#qrMsg', sh); if (m) m.textContent = 'เปิดกล้องไม่ได้ (ต้องอนุญาตกล้องและเปิดผ่าน https) พิมพ์รหัสด้านล่างแทนได้'; const r = $('#qr-reader', sh); if (r) r.hidden = true; });
+}
+function scanToItem() { openScanner(code => { if (S.calc.item[code]) openItem(code); else formItem({ item_code: code }, true); }); }
+
+/* ============ sheets ============ */
+const stack = [];
+function openSheet(html, opt = {}) {
+  const el = document.createElement('div');
+  el.className = 'sheet'; el.style.zIndex = 20 + stack.length * 2;
+  el.innerHTML = `<div class="scrim" data-close></div><div class="panel ${opt.cls || ''}" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  el._opt = opt;
+  $('#sheets').appendChild(el); stack.push(el);
+  el.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeSheet(el); });
+  if (S.device !== 'phone') setTimeout(() => { const f = el.querySelector('[autofocus]'); if (f) f.focus(); }, 40);
+  return el;
+}
+function closeSheet(el) {
+  el = el || stack[stack.length - 1]; if (!el) return;
+  const i = stack.indexOf(el); if (i >= 0) stack.splice(i, 1);
+  el._opt.onClose && el._opt.onClose();
+  el.remove();
+}
+function closeAll() { while (stack.length) closeSheet(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && stack.length) closeSheet(); });
+const head = (t, sub) => `<div class="panel-h"><h3>${t}${sub ? `<small>${sub}</small>` : ''}</h3><button class="icon-btn" type="button" data-close aria-label="ปิด">${ic('close')}</button></div>`;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2200); }
+
+function picker({ title, rows, text, label, sub, onPick, addLabel, onAdd, allowNone }) {
+  const sh = openSheet(`${head(title)}<div class="toolbar"><label class="search">${ic('search')}<input id="pkQ" type="search" placeholder="พิมพ์เพื่อค้นหา" autocomplete="off" autofocus></label>
+    ${addLabel ? `<button class="btn" type="button" data-pk-add>${ic('plus')}<span class="hide-phone">${addLabel}</span></button>` : ''}</div>
+    ${allowNone ? `<div class="actions" style="margin-top:8px"><button class="btn sm ghost" type="button" data-pk-none>${allowNone}</button></div>` : ''}
+    <div class="list scroll" id="pkList" style="margin-top:10px"></div>`, { cls: 'tall' });
+  const draw = q => {
+    q = (q || '').toLowerCase();
+    const list = rows.filter(r => !q || text(r).toLowerCase().includes(q)).slice(0, 120);
+    $('#pkList', sh).innerHTML = list.length ? list.map(r => `<button class="row" type="button" data-pk="${rows.indexOf(r)}"><span class="body"><span class="t">${esc(label(r))}</span><span class="m">${esc(sub(r))}</span></span>${ic('chev', 'width="16" height="16" style="color:var(--muted);flex:none"')}</button>`).join('') : `<div class="empty"><b>ไม่พบ</b>${addLabel ? 'กดปุ่ม + เพื่อเพิ่มใหม่' : ''}</div>`;
+  };
+  draw('');
+  $('#pkQ', sh).addEventListener('input', e => draw(e.target.value));
+  sh.addEventListener('click', e => {
+    const b = e.target.closest('[data-pk]'); if (b) { const r = rows[+b.dataset.pk]; closeSheet(sh); onPick(r); return; }
+    if (e.target.closest('[data-pk-add]')) { const q = $('#pkQ', sh).value; closeSheet(sh); onAdd(q); }
+    if (e.target.closest('[data-pk-none]')) { closeSheet(sh); onPick(null); }
+  });
+}
+const pickItem = (onPick, opts = {}) => picker({
+  title: 'เลือกสินค้า', rows: S.db.ITEMS.filter(i => i.active !== false && (opts.filter ? opts.filter(i) : true)),
+  text: i => `${i.name} ${i.item_code} ${CAT[i.category]}`, label: i => i.name,
+  sub: i => `${i.item_code} · ${i.track_stock ? 'คงเหลือ ' + fmtQ(S.calc.stock[i.item_code] || 0) + ' · ' : ''}${opts.cost ? 'ทุน ' + baht(num(i.cost)) : 'ราคา ' + baht(num(i.price))}`,
+  onPick, addLabel: 'สินค้าใหม่', onAdd: q => formItem({ name: q }, true, it => onPick(it))
+});
+const pickCustomer = onPick => picker({
+  title: 'เลือกลูกค้า', rows: S.db.CUSTOMERS, text: c => [c.name, c.nickname, c.phone, c.line_id, c.instagram, c.facebook, c.customer_id].join(' '),
+  label: c => c.name + (c.nickname ? ` (${c.nickname})` : ''), sub: c => [c.customer_id, c.phone, c.line_id && 'LINE ' + c.line_id, c.instagram && 'IG ' + c.instagram].filter(Boolean).join(' · '),
+  onPick, addLabel: 'ลูกค้าใหม่', onAdd: q => formCustomer({ name: q }, c => onPick(c)), allowNone: 'ไม่ระบุลูกค้า'
+});
+const pickLens = onPick => picker({
+  title: 'เลือกเลนส์จาก Database', rows: S.db.LENSES, text: l => [l.name, l.brand, l.series, l.mount, l.focal, l.lens_id].join(' '),
+  label: lensTitle, sub: l => [l.lens_id, l.mount, num(l.focus_dia) ? 'Ø' + l.focus_dia : '', l.service_price ? '฿' + fmt(l.service_price) : ''].filter(Boolean).join(' · '),
+  onPick, addLabel: 'เลนส์ใหม่', onAdd: q => formLens({ name: q }, l => onPick(l))
+});
+
+/* ============ generic form ============ */
+function fieldHTML(f, v) {
+  const id = 'f_' + f.k, req = f.req ? ' <span class="req">*</span>' : '';
+  const cls = `f${f.full ? ' full' : f.s1 ? ' s1' : ''}`;
+  v = v ?? (f.def ?? '');
+  if (f.type === 'select') return `<div class="${cls}"><label for="${id}">${f.l}${req}</label><select class="in" id="${id}" name="${f.k}">${(f.opts || []).map(o => { const [val, lab] = Array.isArray(o) ? o : [o, (f.labels || {})[o] || o]; return `<option value="${esc(val)}" ${String(v) === String(val) ? 'selected' : ''}>${esc(lab)}</option>`; }).join('')}</select></div>`;
+  if (f.type === 'photo') return `<div class="${cls}"><label>${f.l}</label><div class="photo-field" data-photo="${f.k}">${photoBox(v, 200, '', 'data-pf-pick tabindex="-1"')}
+    <div class="actions"><label class="btn sm">${ic('plus')} ถ่าย / เลือกรูป<input type="file" accept="image/*" hidden data-pf-file></label>${v ? `<button class="btn sm ghost" type="button" data-pf-clear>ลบรูป</button>` : ''}<span class="st" data-pf-st></span></div>
+    <input type="hidden" name="${f.k}" id="${id}" value="${esc(v)}"></div></div>`;
+  if (f.type === 'check') return `<div class="${cls}"><label class="check" for="${id}" style="color:var(--fg)"><input type="checkbox" id="${id}" name="${f.k}" ${v ? 'checked' : ''}> <span>${f.l}</span></label></div>`;
+  if (f.type === 'area') return `<div class="${cls}"><label for="${id}">${f.l}</label><textarea class="in" id="${id}" name="${f.k}" rows="${f.rows || 1}">${esc(v)}</textarea></div>`;
+  const type = f.type === 'number' ? 'text' : (f.type || 'text');
+  const im = f.type === 'number' ? 'inputmode="decimal"' : f.type === 'tel' ? 'inputmode="tel"' : '';
+  return `<div class="${cls}"><label for="${id}">${f.l}${req}</label><input class="in${f.type === 'number' || f.mono ? ' num' : ''}" id="${id}" name="${f.k}" type="${type}" ${im} value="${esc(v)}" ${f.req ? 'required' : ''} ${f.ro ? 'readonly' : ''} ${f.ph ? `placeholder="${esc(f.ph)}"` : ''} ${f.list ? `list="dl_${f.k}"` : ''} autocomplete="off">${f.list ? `<datalist id="dl_${f.k}">${f.list.map(o => `<option value="${esc(o)}">`).join('')}</datalist>` : ''}</div>`;
+}
+function wirePhotos(sh, fileName) {
+  sh.querySelectorAll('[data-photo]').forEach(box => {
+    const hidden = box.querySelector('input[type=hidden]'), file = box.querySelector('[data-pf-file]'), st = box.querySelector('[data-pf-st]');
+    const submit = sh.querySelector('button[type=submit]');
+    const show = v => { box.querySelector('.photo').outerHTML = photoBox(v, 200, '', 'data-pf-pick tabindex="-1"'); };
+    box.addEventListener('click', e => {
+      if (e.target.closest('[data-pf-pick]')) file.click();
+      if (e.target.closest('[data-pf-clear]')) { hidden.value = ''; show(''); e.target.closest('[data-pf-clear]').remove(); }
+    });
+    file.addEventListener('change', async () => {
+      const f = file.files[0]; if (!f) return;
+      try {
+        if (S.mode === 'live') {
+          const big = await resizeImage(f, 1280); show(big);
+          st.textContent = 'กำลังอัปโหลด…'; if (submit) submit.disabled = true;
+          hidden.value = await uploadImage(big, fileName);
+          st.textContent = 'อัปโหลดแล้ว';
+        } else {
+          const small = await resizeImage(f, 480, .78); show(small); hidden.value = small;
+          st.textContent = S.mode === 'demo' ? 'เก็บในเครื่องนี้ (โหมดตัวอย่าง)' : 'เก็บในเครื่องนี้';
+        }
+      } catch (err) { st.textContent = 'อัปโหลดไม่สำเร็จ ลองใหม่'; toast('อัปโหลดรูปไม่สำเร็จ: ' + err.message); }
+      if (submit) submit.disabled = false; file.value = '';
+    });
+  });
+}
+function readForm(form, fields) {
+  const fd = new FormData(form), o = {};
+  for (const f of fields) {
+    if (f.type === 'check') o[f.k] = !!form.elements[f.k]?.checked;
+    else if (f.type === 'number') { const s = String(fd.get(f.k) ?? '').trim(); o[f.k] = s === '' ? '' : num(s); }
+    else o[f.k] = String(fd.get(f.k) ?? '').trim();
+  }
+  return o;
+}
+const delBtn = () => `<button class="btn danger" type="button" data-del>${ic('trash')}<span class="hide-phone">ลบ</span></button>`;
+function armDelete(sh, fn) {
+  const b = $('[data-del]', sh); if (!b) return;
+  b.addEventListener('click', () => { if (b.classList.contains('arm')) { fn(); return; } b.classList.add('arm'); b.innerHTML = 'ยืนยันลบ'; setTimeout(() => { if (b.isConnected) { b.classList.remove('arm'); b.innerHTML = `${ic('trash')}<span class="hide-phone">ลบ</span>`; } }, 3500); });
+}
+function simpleForm({ title, sub, fields, row, isNew, sheet, onSave, deletable, beforeSave, extraTop = '' }) {
+  const sh = openSheet(`${head(title, sub)}<form id="sf" style="display:contents"><div class="panel-b">${extraTop}<div class="fgrid">${fields.map(f => fieldHTML(f, row[f.k])).join('')}</div></div>
+    <div class="panel-f"><div class="actions">${!isNew && deletable ? delBtn() : ''}<button class="btn pri grow" type="submit">บันทึก</button></div></div></form>`);
+  const form = $('#sf', sh);
+  wirePhotos(sh, row.item_code || row.lens_id || row.name || 'image');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    let o = Object.assign({}, row, readForm(form, fields));
+    if (beforeSave) { const r = beforeSave(o, form); if (r === false) return; if (r) o = r; }
+    closeSheet(sh);
+    commit([up(sheet, o)], isNew ? 'เพิ่มแล้ว' : 'บันทึกแล้ว');
+    onSave && onSave(o);
+  });
+  if (deletable) armDelete(sh, () => { closeSheet(sh); deletable(row); });
+  return sh;
+}
+
+/* ============ master-data forms ============ */
+function nextCustomerId() { const n = S.db.CUSTOMERS.map(c => parseInt(String(c.customer_id).replace(/\D/g, ''), 10) || 0); return 'C-' + String(Math.max(0, ...n) + 1).padStart(4, '0'); }
+function formCustomer(row = {}, onSave) {
+  const isNew = !row.customer_id;
+  row = Object.assign({ customer_id: nextCustomerId(), created_at: todayISO(), country: 'Thailand' }, row);
+  simpleForm({
+    title: isNew ? 'ลูกค้าใหม่' : 'แก้ไขลูกค้า', sub: row.customer_id, row, isNew, sheet: 'CUSTOMERS',
+    fields: [
+      { k: 'name', l: 'ชื่อ-นามสกุล', req: true }, { k: 'nickname', l: 'ชื่อเล่น' },
+      { k: 'phone', l: 'เบอร์โทร', type: 'tel' }, { k: 'line_id', l: 'LINE ID' },
+      { k: 'instagram', l: 'Instagram' }, { k: 'facebook', l: 'Facebook' },
+      { k: 'email', l: 'อีเมล', type: 'email' }, { k: 'source', l: 'มาจากช่องทาง', type: 'select', opts: ['', ...lists('channel')] },
+      { k: 'address', l: 'ที่อยู่จัดส่ง', type: 'area', full: true, rows: 2 },
+      { k: 'country', l: 'ประเทศ', list: ['Thailand', 'Japan', 'USA', 'China', 'Singapore', 'Malaysia', 'Vietnam', 'Germany', 'UK'] },
+      { k: 'delivery', l: 'วิธีส่งของ', list: ['Self drop-off', 'Kerry', 'Flash', 'Thailand Post', 'EMS', 'DHL', 'FedEx', 'Grab/Lineman'] },
+      { k: 'tags', l: 'แท็ก', ph: 'VIP, ร้านค้า, ช่างภาพ' }, { k: 'note', l: 'บันทึก' }
+    ],
+    onSave, deletable: isNew ? null : r => {
+      if (S.db.SALES.some(s => s.customer_id === r.customer_id) || S.db.JOBS.some(j => j.customer_id === r.customer_id)) { toast('ลบไม่ได้ ลูกค้ามีประวัติการซื้อหรืองาน'); return; }
+      commit([del('CUSTOMERS', r.customer_id)], 'ลบแล้ว');
+    }
+  });
+}
+function newItemCode() { const d = new Date(), base = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`; let n = 1; while (S.calc.item[base + pad(n)]) n++; return base + pad(n); }
+function formItem(row = {}, isNew = !row.created_at, onSave) {
+  row = Object.assign({ item_code: row.item_code || newItemCode(), category: 'PRODUCT', unit: 'pcs', cost: '', price: '', min_stock: 1, track_stock: true, active: true, created_at: nowISO() }, row);
+  const sh = simpleForm({
+    title: isNew ? 'สินค้าใหม่' : 'แก้ไขสินค้า', sub: isNew ? 'รหัสนี้ใช้ทำ QR หรือสแกนบาร์โค้ดเดิมของสินค้า' : row.item_code, row, isNew, sheet: 'ITEMS',
+    fields: [
+      { k: 'item_code', l: 'รหัสสินค้า', req: true, mono: true, ro: !isNew }, { k: 'category', l: 'หมวด', type: 'select', opts: lists('category'), labels: CAT },
+      { k: 'name', l: 'ชื่อสินค้า', req: true, full: true },
+      { k: 'cost', l: 'ต้นทุน', type: 'number', s1: true }, { k: 'price', l: 'ราคาขาย', type: 'number', s1: true },
+      { k: 'unit', l: 'หน่วย', type: 'select', opts: lists('unit'), labels: UNIT, s1: true }, { k: 'min_stock', l: 'ขั้นต่ำ', type: 'number', s1: true },
+      { k: 'track_stock', l: 'นับสต๊อก', type: 'check' }, { k: 'active', l: 'ยังใช้งานอยู่', type: 'check' },
+      { k: 'image_url', l: 'รูปสินค้า', type: 'photo', full: true },
+      { k: 'lens_id', l: 'ผูก Lens ID', mono: true }, { k: 'note', l: 'บันทึก' }
+    ],
+    beforeSave: o => { if (isNew && S.calc.item[o.item_code]) { toast('รหัสนี้มีอยู่แล้ว'); return false; } },
+    onSave, deletable: isNew ? null : r => {
+      if ([...S.db.SALES, ...S.db.PURCHASES, ...S.db.ADJUST].some(x => x.item_code === r.item_code)) { commit([up('ITEMS', Object.assign({}, r, { active: false }))], 'มีประวัติแล้ว จึงปิดการใช้งานแทนการลบ'); return; }
+      commit([del('ITEMS', r.item_code)], 'ลบแล้ว');
+    }
+  });
+  if (isNew) {
+    const codeIn = $('#f_item_code', sh), wrap = document.createElement('div');
+    wrap.className = 'with'; codeIn.replaceWith(wrap); wrap.appendChild(codeIn);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn icon-only'; b.setAttribute('aria-label', 'สแกนรหัส'); b.style.height = '42px'; b.innerHTML = ic('scan');
+    b.addEventListener('click', () => openScanner(c => { codeIn.value = c; }));
+    wrap.appendChild(b);
+  }
+}
+function nextLensId() { return String(Math.max(0, ...S.db.LENSES.map(l => parseInt(l.lens_id, 10) || 0)) + 10); }
+function formLens(row = {}, onSave) {
+  const isNew = !row.lens_id;
+  row = Object.assign({ lens_id: nextLensId(), type: 'PRIME', created_at: nowISO() }, row);
+  simpleForm({
+    title: isNew ? 'เลนส์ใหม่' : 'แก้ไขข้อมูลเลนส์', sub: 'ขนาดเป็นมิลลิเมตร · Ø = เส้นผ่านศูนย์กลาง', row, isNew, sheet: 'LENSES',
+    fields: [
+      { k: 'name', l: 'ชื่อรุ่นเต็ม', req: true, full: true, ph: 'เช่น CANON nFD 50 F1.4' },
+      { k: 'brand', l: 'ยี่ห้อ', list: [...new Set(S.db.LENSES.map(l => l.brand).filter(Boolean))] }, { k: 'series', l: 'ซีรีส์', list: [...new Set(S.db.LENSES.map(l => l.series).filter(Boolean))] },
+      { k: 'mount', l: 'เมาท์', type: 'select', opts: ['', ...lists('mount')], s1: true }, { k: 'type', l: 'ประเภท', type: 'select', opts: [['PRIME', 'Prime'], ['ZOOM', 'Zoom']], s1: true },
+      { k: 'focal', l: 'ระยะ mm', mono: true, ph: '50', s1: true }, { k: 'aperture', l: 'f/', mono: true, ph: '1.4', s1: true },
+      { k: 'focus_dia', l: 'Focus Ø', type: 'number', s1: true }, { k: 'focus_w', l: 'Focus กว้าง', type: 'number', s1: true },
+      { k: 'zoom_dia', l: 'Zoom Ø', type: 'number', s1: true }, { k: 'zoom_w', l: 'Zoom กว้าง', type: 'number', s1: true },
+      { k: 'iris_dia', l: 'Iris Ø', type: 'number', s1: true }, { k: 'iris_w', l: 'Iris กว้าง', type: 'number', s1: true },
+      { k: 'move_len', l: 'Move', type: 'number', s1: true }, { k: 'simmod_dia', l: 'SIMMOD Ø', type: 'number', s1: true },
+      { k: 'service_price', l: 'ค่าบริการ MOD', type: 'number', s1: true }, { k: 'lens_id', l: 'Lens ID', mono: true, ro: !isNew, s1: true },
+      { k: 'special_file', l: 'Special file', type: 'check' }, { k: 'note', l: 'บันทึก' },
+      { k: 'photo_url', l: 'รูปเลนส์', type: 'photo', full: true }
+    ],
+    beforeSave: o => { if (isNew && S.calc.lens[o.lens_id]) { toast('Lens ID นี้มีอยู่แล้ว'); return false; } },
+    onSave, deletable: isNew ? null : r => commit([del('LENSES', r.lens_id)], 'ลบแล้ว')
+  });
+}
+
+/* ============ transaction forms ============ */
+function lineHTML(kind, ln, i) {
+  const it = S.calc.item[ln.item_code], priceK = kind === 'sale' ? 'unit_price' : 'unit_cost';
+  return `<div class="line" data-line="${i}">
+    <div class="f f-item"><label>สินค้า</label><button class="pick ${it ? '' : 'empty-v'}" type="button" data-pick-item="${i}"><span>${it ? esc(it.name) : 'เลือกสินค้า'}</span>${ic('down')}</button></div>
+    <div class="f"><label>จำนวน</label><input class="in num" inputmode="decimal" data-k="qty" value="${esc(ln.qty)}"></div>
+    <div class="f"><label>${kind === 'sale' ? 'ราคา/หน่วย' : 'ทุน/หน่วย'}</label><input class="in num" inputmode="decimal" data-k="${priceK}" value="${esc(ln[priceK])}"></div>
+    <button class="x" type="button" data-rm="${i}" aria-label="ลบบรรทัด">${ic('close')}</button></div>`;
+}
+function formTxn(kind, preset = {}) {
+  const sale = kind === 'sale';
+  const it0 = S.calc.item[preset.item_code];
+  const st = { customer_id: preset.customer_id || '', lines: it0 ? [{ item_code: it0.item_code, qty: 1, unit_price: num(it0.price), unit_cost: num(it0.cost) }] : [{ item_code: '', qty: 1, unit_price: '', unit_cost: '' }] };
+  const suppliers = [...new Set(S.db.PURCHASES.map(p => p.supplier).filter(Boolean))];
+  const sel = (id, opts, cur, labels = {}) => `<select class="in" id="${id}">${opts.map(c => `<option value="${esc(c)}" ${c === cur ? 'selected' : ''}>${esc(labels[c] || c || '—')}</option>`).join('')}</select>`;
+  const sh = openSheet(`${head(sale ? 'บันทึกการขาย' : 'บันทึกซื้อเข้า', sale ? 'หลายสินค้าในออเดอร์เดียวได้' : 'สต๊อกเพิ่มอัตโนมัติ')}
+    <form id="tx" style="display:contents"><div class="panel-b">
+      <div class="fgrid">
+        <div class="f"><label for="tx_date">วันที่</label><input class="in num" type="date" id="tx_date" value="${todayISO()}"></div>
+        ${sale ? `<div class="f"><label>ลูกค้า</label><button class="pick" type="button" id="tx_cust"><span></span>${ic('down')}</button></div>
+          <div class="f s1"><label for="tx_ch">ช่องทาง</label>${sel('tx_ch', ['', ...lists('channel')], preset.channel || '')}</div>
+          <div class="f s1"><label for="tx_pay">ชำระ</label>${sel('tx_pay', lists('payment'), 'PAID', PAY)}</div>
+          <div class="f s1"><label for="tx_st">จัดส่ง</label>${sel('tx_st', lists('sale_status'), 'DELIVERED', SST)}</div>
+          <div class="f s1"><label for="tx_disc">ส่วนลด</label><input class="in num" inputmode="decimal" id="tx_disc" placeholder="0"></div>`
+      : `<div class="f"><label for="tx_sup">ซื้อจาก</label><input class="in" id="tx_sup" list="dl_sup" autocomplete="off"><datalist id="dl_sup">${suppliers.map(s => `<option value="${esc(s)}">`).join('')}</datalist></div>
+          <div class="f"><label for="tx_oc">ค่าส่ง/ภาษี/อื่นๆ (ส่วนลดใส่ติดลบ)</label><input class="in num" inputmode="decimal" id="tx_oc" placeholder="0"></div>`}
+        <div class="f full"><label for="tx_note">บันทึก</label><input class="in" id="tx_note" placeholder="${sale ? 'เลข tracking, ของแถม' : 'เลขใบเสร็จ'}"></div>
+      </div>
+      <div class="lines" id="txLines"></div>
+    </div>
+    <div class="panel-f">
+      <div class="actions"><button class="btn sm" type="button" id="addLine">${ic('plus')} เพิ่มสินค้า</button><button class="btn sm" type="button" id="scanLine">${ic('scan')} สแกน</button></div>
+      <div class="total-bar"><div class="tot"><span class="lbl">ยอดรวม</span><span class="num" id="txTotal">0</span></div><button class="btn pri" type="submit" style="height:48px">${sale ? 'บันทึกขาย' : 'รับเข้า'}</button></div>
+    </div></form>`, { cls: 'tall' });
+  const linesEl = $('#txLines', sh), custBtn = $('#tx_cust', sh);
+  const drawCust = () => { if (!custBtn) return; const c = S.calc.cust[st.customer_id]; custBtn.classList.toggle('empty-v', !c); custBtn.firstElementChild.textContent = c ? c.name : 'ไม่ระบุลูกค้า'; };
+  const total = () => {
+    const subT = st.lines.reduce((a, l) => a + num(l.qty) * num(sale ? l.unit_price : l.unit_cost), 0);
+    $('#txTotal', sh).textContent = baht(subT + (sale ? -num($('#tx_disc', sh).value) : num($('#tx_oc', sh).value)));
+  };
+  const draw = () => { linesEl.innerHTML = st.lines.map((l, i) => lineHTML(kind, l, i)).join(''); total(); };
+  draw(); drawCust();
+  custBtn && custBtn.addEventListener('click', () => pickCustomer(c => { st.customer_id = c ? c.customer_id : ''; if (c && c.source && !$('#tx_ch', sh).value) $('#tx_ch', sh).value = c.source; drawCust(); }));
+  const setItem = (i, it) => { st.lines[i].item_code = it.item_code; if (sale) st.lines[i].unit_price = num(it.price); else st.lines[i].unit_cost = num(it.cost); draw(); };
+  linesEl.addEventListener('click', e => {
+    const p = e.target.closest('[data-pick-item]'); if (p) { const i = +p.dataset.pickItem; pickItem(it => setItem(i, it), { cost: !sale }); return; }
+    const r = e.target.closest('[data-rm]'); if (r) { st.lines.splice(+r.dataset.rm, 1); if (!st.lines.length) st.lines.push({ item_code: '', qty: 1 }); draw(); }
+  });
+  linesEl.addEventListener('input', e => { const k = e.target.dataset.k; if (!k) return; st.lines[+e.target.closest('[data-line]').dataset.line][k] = e.target.value; total(); });
+  sh.addEventListener('input', e => { if (e.target.id === 'tx_disc' || e.target.id === 'tx_oc') total(); });
+  $('#addLine', sh).addEventListener('click', () => { st.lines.push({ item_code: '', qty: 1 }); draw(); linesEl.scrollTop = linesEl.scrollHeight; pickItem(it => setItem(st.lines.length - 1, it), { cost: !sale }); });
+  $('#scanLine', sh).addEventListener('click', () => openScanner(code => {
+    const it = S.calc.item[code]; if (!it) { toast('ไม่พบรหัส ' + code); return; }
+    const ex = st.lines.find(l => l.item_code === code); if (ex) { ex.qty = num(ex.qty) + 1; draw(); return; }
+    const blank = st.lines.findIndex(l => !l.item_code); if (blank >= 0) setItem(blank, it); else { st.lines.push({ item_code: '', qty: 1 }); setItem(st.lines.length - 1, it); }
+  }));
+  $('#tx', sh).addEventListener('submit', e => {
+    e.preventDefault();
+    const lines = st.lines.filter(l => l.item_code && num(l.qty) > 0);
+    if (!lines.length) { toast('เลือกสินค้าอย่างน้อย 1 รายการ'); return; }
+    const date = $('#tx_date', sh).value || todayISO(), note = $('#tx_note', sh).value.trim(), created = nowISO();
+    let ops, short = '';
+    if (sale) {
+      const order = rid('ORD'), disc = num($('#tx_disc', sh).value);
+      ops = lines.map((l, i) => {
+        const it = S.calc.item[l.item_code], q = num(l.qty), p = num(l.unit_price), d = i === 0 ? disc : 0;
+        if (it.track_stock && q > (S.calc.stock[l.item_code] || 0)) short = it.name;
+        return up('SALES', { sale_id: rid('S'), order_no: order, date, customer_id: st.customer_id, item_code: l.item_code, item_name: it.name, qty: q, unit_price: p, discount: d, total: q * p - d, channel: $('#tx_ch', sh).value, payment: $('#tx_pay', sh).value, status: $('#tx_st', sh).value, note, created_at: created });
+      });
+    } else {
+      const oc = num($('#tx_oc', sh).value), sup = $('#tx_sup', sh).value.trim();
+      ops = lines.map((l, i) => {
+        const it = S.calc.item[l.item_code], q = num(l.qty), c = num(l.unit_cost), o = i === 0 ? oc : 0;
+        return up('PURCHASES', { purchase_id: rid('P'), date, item_code: l.item_code, item_name: it.name, qty: q, unit_cost: c, other_cost: o, total: q * c + o, supplier: sup, note, created_at: created });
+      });
+    }
+    closeAll();
+    commit(ops, short ? `บันทึกแล้ว · ${short} สต๊อกติดลบ` : (sale ? `บันทึกการขาย ${ops.length} รายการแล้ว` : `รับเข้า ${ops.length} รายการแล้ว`));
+  });
+}
+function formAdjust(code) {
+  const st = { item_code: code || '' };
+  const sh = openSheet(`${head('ปรับสต๊อก', 'ใช้เมื่อตรวจนับแล้วไม่ตรง หรือของเสีย/หาย')}
+    <form id="adj" style="display:contents"><div class="panel-b"><div class="fgrid">
+      <div class="f full"><label>สินค้า</label><button class="pick" type="button" id="adjItem"><span></span>${ic('down')}</button></div>
+      <div class="f"><label for="adj_mode">วิธีปรับ</label><select class="in" id="adj_mode"><option value="count">นับได้จริงเท่าไร</option><option value="delta">เพิ่ม/ลด (+/−)</option></select></div>
+      <div class="f"><label for="adj_val" id="adj_lbl">จำนวนที่นับได้</label><input class="in num" inputmode="decimal" id="adj_val" required></div>
+      <div class="f"><label for="adj_date">วันที่</label><input class="in num" type="date" id="adj_date" value="${todayISO()}"></div>
+      <div class="f"><label for="adj_reason">เหตุผล</label><select class="in" id="adj_reason">${lists('adj_reason').filter(r => r !== 'OPENING').map(r => `<option value="${r}">${ADJ[r] || r}</option>`).join('')}</select></div>
+      <div class="f full"><label for="adj_note">บันทึก</label><input class="in" id="adj_note"></div></div>
+      <p class="muted" id="adjHint" style="margin:0;font-size:14px"></p></div>
+      <div class="panel-f"><button class="btn pri" type="submit">บันทึกการปรับ</button></div></form>`);
+  const btn = $('#adjItem', sh);
+  const hint = () => {
+    const it = S.calc.item[st.item_code], cur = S.calc.stock[st.item_code] || 0, mode = $('#adj_mode', sh).value, v = $('#adj_val', sh).value;
+    btn.classList.toggle('empty-v', !it); btn.firstElementChild.textContent = it ? it.name : 'เลือกสินค้า';
+    $('#adj_lbl', sh).textContent = mode === 'count' ? 'จำนวนที่นับได้' : 'เพิ่ม (+) / ลด (−)';
+    const diff = v === '' ? null : (mode === 'count' ? num(v) - cur : num(v));
+    $('#adjHint', sh).textContent = it ? `ในระบบ ${fmtQ(cur)} ${UNIT[it.unit] || it.unit}${diff != null ? ` → หลังปรับ ${fmtQ(cur + diff)} (${diff >= 0 ? '+' : ''}${fmtQ(diff)})` : ''}` : '';
+  };
+  hint();
+  btn.addEventListener('click', () => pickItem(it => { st.item_code = it.item_code; hint(); }, { filter: i => i.track_stock }));
+  sh.addEventListener('input', hint); sh.addEventListener('change', hint);
+  $('#adj', sh).addEventListener('submit', e => {
+    e.preventDefault();
+    const it = S.calc.item[st.item_code]; if (!it) { toast('เลือกสินค้าก่อน'); return; }
+    const cur = S.calc.stock[st.item_code] || 0, v = num($('#adj_val', sh).value);
+    const diff = $('#adj_mode', sh).value === 'count' ? v - cur : v;
+    if (!diff) { toast('ยอดตรงกับระบบแล้ว'); return; }
+    closeAll();
+    commit([up('ADJUST', { adj_id: rid('A'), date: $('#adj_date', sh).value || todayISO(), item_code: it.item_code, item_name: it.name, qty_change: diff, reason: $('#adj_reason', sh).value, note: $('#adj_note', sh).value.trim(), created_at: nowISO() })], 'ปรับสต๊อกแล้ว');
+  });
+}
+function formJob(row = {}) {
+  const isNew = !row.job_id;
+  const st = Object.assign({ job_id: rid('J'), date: todayISO(), customer_id: '', lens_id: '', lens_name: '', service: 'Lens MOD', price: '', paid: '', status: 'RECEIVED', due_date: '', delivery: '', note: '', created_at: nowISO() }, row);
+  const sh = openSheet(`${head(isNew ? 'รับงาน Lens MOD' : 'งาน ' + st.job_id, isNew ? 'ผูกกับลูกค้าและ Lens Database' : dshort(st.date))}
+    <form id="job" style="display:contents"><div class="panel-b"><div class="fgrid">
+      <div class="f"><label>ลูกค้า</label><button class="pick" type="button" id="jbCust"><span></span>${ic('down')}</button></div>
+      <div class="f"><label>เลนส์จาก Database</label><button class="pick" type="button" id="jbLens"><span></span>${ic('down')}</button></div>
+      <div class="f full"><label for="jb_ln">ชื่อเลนส์ (แก้ได้ หรือพิมพ์เองถ้าไม่มีใน Database)</label><input class="in" id="jb_ln" value="${esc(st.lens_name)}"></div>
+      <div class="f"><label for="jb_sv">บริการ</label><select class="in" id="jb_sv">${lists('service').map(s => `<option ${s === st.service ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
+      <div class="f"><label for="jb_st">สถานะ</label><select class="in" id="jb_st">${lists('job_status').map(s => `<option value="${s}" ${s === st.status ? 'selected' : ''}>${JST[s] || s}</option>`).join('')}</select></div>
+      <div class="f s1"><label for="jb_pr">ราคา</label><input class="in num" inputmode="decimal" id="jb_pr" value="${esc(st.price)}"></div>
+      <div class="f s1"><label for="jb_pd">รับเงินแล้ว</label><input class="in num" inputmode="decimal" id="jb_pd" value="${esc(st.paid)}"></div>
+      <div class="f s1"><label for="jb_dt">รับงาน</label><input class="in num" type="date" id="jb_dt" value="${esc(st.date)}"></div>
+      <div class="f s1"><label for="jb_due">กำหนดส่ง</label><input class="in num" type="date" id="jb_due" value="${esc(st.due_date)}"></div>
+      <div class="f"><label for="jb_dl">การส่งคืน</label><input class="in" id="jb_dl" value="${esc(st.delivery)}" list="dl_dlv"><datalist id="dl_dlv">${['Self drop-off', 'Kerry', 'Flash', 'Thailand Post', 'EMS', 'DHL'].map(o => `<option value="${o}">`).join('')}</datalist></div>
+      <div class="f"><label for="jb_nt">บันทึก</label><input class="in" id="jb_nt" value="${esc(st.note)}"></div></div></div>
+      <div class="panel-f"><div class="actions">${isNew ? '' : delBtn()}<button class="btn pri grow" type="submit">บันทึกงาน</button></div></div></form>`);
+  const cb = $('#jbCust', sh), lb = $('#jbLens', sh);
+  const draw = () => {
+    const c = S.calc.cust[st.customer_id], l = S.calc.lens[st.lens_id];
+    cb.classList.toggle('empty-v', !c); cb.firstElementChild.textContent = c ? c.name : 'เลือกลูกค้า';
+    lb.classList.toggle('empty-v', !l); lb.firstElementChild.textContent = l ? lensTitle(l) : 'เลือกเลนส์';
+  };
+  draw();
+  cb.addEventListener('click', () => pickCustomer(c => { st.customer_id = c ? c.customer_id : ''; draw(); }));
+  lb.addEventListener('click', () => pickLens(l => { st.lens_id = l.lens_id; $('#jb_ln', sh).value = lensTitle(l); if (l.service_price && !$('#jb_pr', sh).value) $('#jb_pr', sh).value = l.service_price; draw(); }));
+  $('#job', sh).addEventListener('submit', e => {
+    e.preventDefault();
+    const o = Object.assign({}, st, { lens_name: $('#jb_ln', sh).value.trim(), service: $('#jb_sv', sh).value, status: $('#jb_st', sh).value, price: num($('#jb_pr', sh).value), paid: num($('#jb_pd', sh).value), date: $('#jb_dt', sh).value || todayISO(), due_date: $('#jb_due', sh).value, delivery: $('#jb_dl', sh).value.trim(), note: $('#jb_nt', sh).value.trim() });
+    if (!o.lens_name) { toast('ใส่ชื่อเลนส์ก่อน'); return; }
+    closeAll(); commit([up('JOBS', o)], isNew ? 'รับงานแล้ว' : 'บันทึกงานแล้ว');
+  });
+  armDelete(sh, () => { closeAll(); commit([del('JOBS', st.job_id)], 'ลบงานแล้ว'); });
+}
+function formRow(sheet, row) {
+  const sale = sheet === 'SALES', adj = sheet === 'ADJUST', it = S.calc.item[row.item_code] || {};
+  const fields = sale ? [
+    { k: 'date', l: 'วันที่', type: 'date' }, { k: 'channel', l: 'ช่องทาง', type: 'select', opts: ['', ...lists('channel')] },
+    { k: 'qty', l: 'จำนวน', type: 'number', s1: true }, { k: 'unit_price', l: 'ราคา/หน่วย', type: 'number', s1: true }, { k: 'discount', l: 'ส่วนลด', type: 'number', s1: true }, { k: 'payment', l: 'ชำระ', type: 'select', opts: lists('payment'), labels: PAY, s1: true },
+    { k: 'status', l: 'สถานะ', type: 'select', opts: lists('sale_status'), labels: SST }, { k: 'note', l: 'บันทึก' }
+  ] : adj ? [
+    { k: 'date', l: 'วันที่', type: 'date' }, { k: 'qty_change', l: 'เพิ่ม/ลด', type: 'number' }, { k: 'reason', l: 'เหตุผล', type: 'select', opts: lists('adj_reason'), labels: ADJ }, { k: 'note', l: 'บันทึก' }
+  ] : [
+    { k: 'date', l: 'วันที่', type: 'date' }, { k: 'supplier', l: 'ผู้ขาย' },
+    { k: 'qty', l: 'จำนวน', type: 'number', s1: true }, { k: 'unit_cost', l: 'ทุน/หน่วย', type: 'number', s1: true }, { k: 'other_cost', l: 'ค่าอื่นๆ', type: 'number' }, { k: 'note', l: 'บันทึก', full: true }
+  ];
+  const c = S.calc.cust[row.customer_id];
+  const extraTop = sale ? `<div class="contact"><span class="lbl">ลูกค้า</span><span class="v">${c ? esc(c.name) : 'ไม่ระบุ'}</span><button class="btn sm" type="button" id="rowCust" style="width:auto">เปลี่ยน</button></div>` : '';
+  const sh = simpleForm({
+    title: esc(row.item_name || it.name || row.item_code), sub: `${row[ID[sheet]]}${row.order_no ? ' · ' + row.order_no : ''}`, row, isNew: false, sheet, fields, extraTop,
+    beforeSave: o => { if (sale) o.total = num(o.qty) * num(o.unit_price) - num(o.discount); if (sheet === 'PURCHASES') o.total = num(o.qty) * num(o.unit_cost) + num(o.other_cost); return o; },
+    deletable: r => commit([del(sheet, r[ID[sheet]])], 'ลบรายการแล้ว')
+  });
+  if (sale) $('#rowCust', sh).addEventListener('click', () => pickCustomer(cc => { row.customer_id = cc ? cc.customer_id : ''; $('#rowCust', sh).previousElementSibling.textContent = cc ? cc.name : 'ไม่ระบุ'; }));
+}
+
+/* ============ detail sheets ============ */
+function openItem(code) {
+  const i = S.calc.item[code]; if (!i) return;
+  const q = S.calc.stock[code] || 0, st = stockState(i);
+  const hist = [
+    ...S.db.PURCHASES.filter(p => p.item_code === code).map(p => ({ d: p.date, t: 'ซื้อเข้า' + (p.supplier ? ' · ' + p.supplier : ''), q: num(p.qty), a: p.total, k: 'PURCHASES', id: p.purchase_id })),
+    ...S.db.SALES.filter(s => s.item_code === code).map(s => ({ d: s.date, t: 'ขาย' + (S.calc.cust[s.customer_id] ? ' · ' + S.calc.cust[s.customer_id].name : ''), q: -num(s.qty), a: s.total, k: 'SALES', id: s.sale_id, x: s.status === 'CANCELLED' })),
+    ...S.db.ADJUST.filter(a => a.item_code === code).map(a => ({ d: a.date, t: 'ปรับ · ' + (ADJ[a.reason] || a.reason), q: num(a.qty_change), k: 'ADJUST', id: a.adj_id }))
+  ].sort((a, b) => String(b.d).localeCompare(String(a.d)));
+  const margin = num(i.price) ? Math.round((num(i.price) - num(i.cost)) / num(i.price) * 100) : 0;
+  const sh = openSheet(`${head(esc(i.name), `${CAT[i.category] || i.category} · ${UNIT[i.unit] || i.unit}${i.active === false ? ' · ปิดใช้งาน' : ''}`)}
+    <div class="panel-b" style="overflow:hidden">
+      <div class="trio">
+        <div class="tile ${st.k === 'bad' ? 't-rose' : st.k === 'warn' ? 't-sand' : i.track_stock ? 't-brand' : 't-card'}"><span class="lbl">คงเหลือ</span><div class="big">${i.track_stock ? fmtQ(q) : '—'}</div><span class="sub">${i.track_stock ? `${st.t} · ขั้นต่ำ ${fmtQ(i.min_stock)}` : 'ไม่นับสต๊อก'}</span></div>
+        <div class="tile t-card"><span class="lbl">ทุน / ขาย</span><div class="big">${fmt(i.cost)}/${fmt(i.price)}</div><span class="sub muted">มาร์จิ้น ${margin}%</span></div>
+        <div class="tile t-card"><span class="lbl">ขายแล้ว</span><div class="big">${fmtQ(S.calc.soldQ[code] || 0)}</div><span class="sub muted">${UNIT[i.unit] || i.unit}</span></div>
+      </div>
+      <div class="media">${photoBox(i.image_url, 600, 'เพิ่มรูป', 'data-q="photo" aria-label="รูปสินค้า"')}
+        <div class="qr-box"><div class="qr" data-qr="${esc(code)}"></div><div style="flex:1;min-width:0"><span class="lbl">ITEM CODE</span><div class="num">${esc(code)}</div>${i.lens_id && S.calc.lens[i.lens_id] ? `<div style="font-size:13px">Lens: ${esc(lensTitle(S.calc.lens[i.lens_id]))}</div>` : ''}</div></div></div>
+      <div class="actions nowrap"><button class="btn pri grow" type="button" data-q="sale">${ic('cart')} ขาย</button><button class="btn grow" type="button" data-q="buy">${ic('in')} ซื้อเข้า</button>${i.track_stock ? `<button class="btn grow" type="button" data-q="adj">${ic('adjust')} ปรับ</button>` : ''}<button class="btn icon-only" type="button" data-q="edit" aria-label="แก้ไขสินค้า">${ic('edit')}</button></div>
+      <div class="lbl" style="flex:none">ประวัติ (${hist.length})</div>
+      <div class="list scroll">${hist.length ? hist.map(h => `<button class="row" type="button" data-open="${h.k}:${esc(h.id)}"><span class="body"><span class="t" ${h.x ? 'style="text-decoration:line-through"' : ''}>${esc(h.t)}</span><span class="m">${dshort(h.d)}${h.a != null ? ' · ' + baht(num(h.a)) : ''}</span></span><span class="r q num" style="font-size:17px;color:${h.q < 0 ? 'var(--muted)' : 'var(--fg)'}">${h.q > 0 ? '+' : ''}${fmtQ(h.q)}</span></button>`).join('') : `<div class="empty">ยังไม่มีความเคลื่อนไหว</div>`}</div>
+    </div>`, { cls: 'tall' });
+  fillQR(sh);
+  sh.addEventListener('click', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    const k = b.dataset.q;
+    if (k === 'sale') formTxn('sale', { item_code: code });
+    if (k === 'buy') formTxn('buy', { item_code: code });
+    if (k === 'adj') formAdjust(code);
+    if (k === 'edit' || (k === 'photo' && !i.image_url)) { closeSheet(sh); formItem(Object.assign({}, i), false); }
+    if (k === 'photo' && i.image_url) openViewer(i.image_url, i.name);
+  });
+}
+function openCustomer(id) {
+  const c = S.calc.cust[id]; if (!c) return;
+  const s = custStats(id);
+  const hist = [
+    ...s.sales.map(x => ({ d: x.date, t: x.item_name, a: x.total, m: `×${fmtQ(x.qty)} · ${PAY[x.payment] || x.payment}`, k: 'SALES', id: x.sale_id })),
+    ...s.jobs.map(j => ({ d: j.date, t: `${j.service} · ${j.lens_name}`, a: j.price, m: JST[j.status] || j.status, k: 'JOBS', id: j.job_id }))
+  ].sort((a, b) => String(b.d).localeCompare(String(a.d)));
+  const contact = (l, v, full) => v ? `<div class="contact ${full ? 'full' : ''}"><span class="lbl">${l}</span><span class="v">${esc(v)}</span><button type="button" data-copy="${esc(v)}" aria-label="คัดลอก ${l}">${ic('copy')}</button></div>` : '';
+  const sh = openSheet(`${head(esc(c.name) + (c.nickname ? ` <span class="muted">(${esc(c.nickname)})</span>` : ''), `${c.customer_id}${c.source ? ' · มาจาก ' + esc(c.source) : ''}${c.tags ? ' · ' + esc(c.tags) : ''}`)}
+    <div class="panel-b" style="overflow:hidden">
+      <div class="trio"><div class="tile t-rose"><span class="lbl">ยอดซื้อรวม</span><div class="big">${baht(s.spend)}</div></div>
+        <div class="tile t-card"><span class="lbl">ออเดอร์</span><div class="big">${s.orders}</div></div>
+        <div class="tile t-card"><span class="lbl">งานบริการ</span><div class="big">${s.jobs.length}</div></div></div>
+      <div class="contacts">${contact('โทร', c.phone)}${contact('LINE', c.line_id)}${contact('IG', c.instagram)}${contact('FB', c.facebook)}${contact('อีเมล', c.email)}${contact('ส่งของ', c.delivery)}${contact('ที่อยู่', [c.address, c.country].filter(Boolean).join(', '), true)}</div>
+      ${c.note ? `<p class="muted" style="margin:0;font-size:14px;flex:none">${esc(c.note)}</p>` : ''}
+      <div class="actions"><button class="btn pri grow" type="button" data-q="sale">${ic('cart')} ขาย</button><button class="btn grow" type="button" data-q="job">${ic('wrench')} รับงาน</button><button class="btn icon-only" type="button" data-q="edit" aria-label="แก้ไขลูกค้า">${ic('edit')}</button></div>
+      <div class="lbl" style="flex:none">ประวัติ (${hist.length})</div>
+      <div class="list scroll">${hist.length ? hist.map(h => `<button class="row" type="button" data-open="${h.k}:${esc(h.id)}"><span class="body"><span class="t">${esc(h.t)}</span><span class="m">${dshort(h.d)} · ${esc(h.m)}</span></span><span class="r num">${fmt(h.a)}</span></button>`).join('') : `<div class="empty">ยังไม่มีประวัติการซื้อ</div>`}</div>
+    </div>`, { cls: 'tall' });
+  sh.addEventListener('click', e => {
+    const cp = e.target.closest('[data-copy]'); if (cp) { const v = cp.dataset.copy; try { navigator.clipboard.writeText(v).then(() => toast('คัดลอกแล้ว'), () => toast(v)); } catch (err) { toast(v); } return; }
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    if (b.dataset.q === 'sale') formTxn('sale', { customer_id: id, channel: c.source });
+    if (b.dataset.q === 'job') formJob({ customer_id: id });
+    if (b.dataset.q === 'edit') { closeSheet(sh); formCustomer(Object.assign({}, c)); }
+  });
+}
+function lensFigure(l) {
+  const rings = [['IRIS', num(l.iris_dia), num(l.iris_w)], ['ZOOM', num(l.zoom_dia), num(l.zoom_w)], ['FOCUS', num(l.focus_dia), num(l.focus_w)]].filter(r => r[1] > 0 || r[2] > 0);
+  if (!rings.length) return '';
+  const W = 340, H = 96, cy = 42, maxD = Math.max(...rings.map(r => r[1]), 50), k = 74 / maxD;
+  const body = Math.min(...rings.filter(r => r[1]).map(r => r[1]), maxD) * k * .86, wk = 2.2;
+  let x = 70, s = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="แผนภาพวงแหวนเลนส์">`;
+  s += `<rect x="36" y="${cy - body * .42}" width="34" height="${body * .84}" fill="var(--surface-2)" stroke="var(--line)"/><text x="53" y="${H - 3}" text-anchor="middle">MOUNT</text>`;
+  const tot = rings.reduce((a, r) => a + Math.max(8, r[2] || 8) * wk + 14, 0);
+  s += `<rect x="70" y="${cy - body / 2}" width="${Math.max(tot + 24, 180)}" height="${body}" fill="var(--surface-2)" stroke="var(--line)"/>`;
+  x += 12;
+  for (const [n, d, w] of rings) {
+    const h = (d || maxD * .9) * k, ww = Math.max(8, w || 8) * wk;
+    s += `<rect x="${x}" y="${cy - h / 2}" width="${ww}" height="${h}" rx="3" fill="${n === 'FOCUS' ? 'var(--brand)' : n === 'ZOOM' ? 'var(--dust)' : 'var(--rose)'}"/>`;
+    for (let g = x + 3; g < x + ww - 2; g += 3) s += `<line x1="${g}" x2="${g}" y1="${cy - h / 2 + 3}" y2="${cy + h / 2 - 3}" stroke="var(--on-tile)" stroke-opacity=".18"/>`;
+    s += `<text x="${x + ww / 2}" y="${H - 3}" text-anchor="middle">${n}</text>`;
+    x += ww + 14;
+  }
+  return s + '</svg>';
+}
+function openLens(id) {
+  const l = S.calc.lens[id]; if (!l) return;
+  const jobs = S.db.JOBS.filter(j => j.lens_id === id), fig = lensFigure(l);
+  const kv = (lab, v) => `<div><span class="lbl">${lab}</span><b>${num(v) ? trimNum(v) : '—'}</b></div>`;
+  const sh = openSheet(`${head(esc(lensTitle(l)), [l.lens_id, l.brand, l.series, l.mount].filter(Boolean).map(esc).join(' · '))}
+    <div class="panel-b" style="overflow:hidden">
+      <div class="trio"><div class="tile t-rose"><span class="lbl">Focal</span><div class="big" ${String(l.focal).length > 4 ? 'style="font-size:17px"' : ''}>${esc(l.focal || '—')}<small style="font-size:12px"> mm</small></div></div>
+        <div class="tile t-card"><span class="lbl">Aperture</span><div class="big">f/${esc(l.aperture || '—')}</div></div>
+        <div class="tile ${l.service_price ? 't-brand' : 't-card'}"><span class="lbl">ค่า MOD</span><div class="big">${l.service_price ? baht(num(l.service_price)) : '—'}</div></div></div>
+      ${l.special_file ? `<div class="banner">ใช้ไฟล์พิเศษ (Special file) ตรวจไฟล์งานก่อนผลิต</div>` : ''}
+      ${l.photo_url ? `<div class="lens-photo">${photoBox(l.photo_url, 800, '', 'data-q="photo"')}</div>` : ''}
+      ${fig ? `<div class="lensfig">${fig}</div>` : ''}
+      <div class="kv k4">${kv('Focus Ø', l.focus_dia)}${kv('Focus กว้าง', l.focus_w)}${kv('Zoom Ø', l.zoom_dia)}${kv('Zoom กว้าง', l.zoom_w)}${kv('Iris Ø', l.iris_dia)}${kv('Iris กว้าง', l.iris_w)}${kv('Move', l.move_len)}${kv('SIMMOD Ø', l.simmod_dia)}</div>
+      ${l.note ? `<p style="margin:0;font-size:14px;flex:none"><span class="lbl">บันทึก </span>${esc(l.note)}</p>` : ''}
+      <div class="actions"><button class="btn pri grow" type="button" data-q="job">${ic('wrench')} รับงานเลนส์นี้</button><button class="btn icon-only" type="button" data-q="edit" aria-label="แก้ไขเลนส์">${ic('edit')}</button></div>
+      ${jobs.length ? `<div class="lbl" style="flex:none">งานที่เคยทำ (${jobs.length})</div><div class="list scroll">${jobs.map(jobRow).join('')}</div>` : ''}
+      ${l.original_name && l.original_name !== l.name ? `<p class="muted" style="margin:0;font-size:12px;flex:none">ชื่อในระบบเดิม: ${esc(l.original_name)}</p>` : ''}
+    </div>`);
+  sh.addEventListener('click', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    if (b.dataset.q === 'job') formJob({ lens_id: id, lens_name: lensTitle(l), price: l.service_price || '' });
+    if (b.dataset.q === 'edit') { closeSheet(sh); formLens(Object.assign({}, l)); }
+    if (b.dataset.q === 'photo') openViewer(l.photo_url, lensTitle(l));
+  });
+}
+function openRecord() {
+  const sh = openSheet(`${head('บันทึกรายการ')}
+    <div class="panel-b"><div class="menu">
+      <button class="tile t-brand" type="button" data-r="sale">${ic('cart')}<b>ขายสินค้า</b><span>ตัดสต๊อก + ผูกลูกค้า</span></button>
+      <button class="tile t-dust" type="button" data-r="job">${ic('wrench')}<b>รับงาน Lens MOD</b><span>บริการ / Rehousing</span></button>
+      <button class="tile t-sand" type="button" data-r="buy">${ic('in')}<b>ซื้อเข้า</b><span>เพิ่มสต๊อก + ต้นทุน</span></button>
+      <button class="tile t-rose" type="button" data-r="cust">${ic('user')}<b>ลูกค้าใหม่</b><span>ข้อมูลติดต่อ / ที่อยู่</span></button>
+      <button class="tile t-card" type="button" data-r="item">${ic('box')}<b>สินค้าใหม่</b><span>ลงทะเบียน + QR</span></button>
+      <button class="tile t-card" type="button" data-r="adj">${ic('adjust')}<b>ปรับสต๊อก</b><span>ตรวจนับ / ของเสีย</span></button>
+      <button class="tile t-card" type="button" data-r="lens">${ic('lens')}<b>เลนส์ใหม่</b><span>เพิ่มใน Database</span></button>
+      <button class="tile t-card" type="button" data-r="scan">${ic('scan')}<b>สแกน QR</b><span>เปิดสินค้าจากฉลาก</span></button>
+    </div></div>`, { cls: S.device === 'phone' ? '' : 'wide' });
+  sh.addEventListener('click', e => {
+    const b = e.target.closest('[data-r]'); if (!b) return;
+    closeSheet(sh);
+    ({ sale: () => formTxn('sale'), buy: () => formTxn('buy'), job: () => formJob(), cust: () => formCustomer(), item: () => formItem({}, true), adj: () => formAdjust(), lens: () => formLens(), scan: scanToItem })[b.dataset.r]();
+  });
+}
+function openNavMenu() {
+  const sh = openSheet(`${head('เมนู')}<div class="panel-b"><div class="list">${NAV.map(([k, t, i]) => `<a class="row" href="#${k}"><span class="ic bg-mute">${ic(i)}</span><span class="body"><span class="t">${TITLE[k]}</span>${k === 'setup' && needsAttention() ? `<span class="m">${S.mode === 'local' ? 'ยังไม่เชื่อมต่อ' : S.sync === 'offline' ? 'ออฟไลน์' : 'มีรายการรอส่ง'}</span>` : ''}</span>${ic('chev', 'width="16" height="16" style="flex:none"')}</a>`).join('')}</div></div>`);
+  sh.addEventListener('click', e => { if (e.target.closest('a')) closeSheet(sh); });
+}
+
+/* ============ events ============ */
+document.addEventListener('click', e => {
+  const t = e.target;
+  const go = t.closest('[data-go]'); if (go) { location.hash = '#' + go.dataset.go; return; }
+  const act = t.closest('[data-act]');
+  if (act) {
+    const a = act.dataset.act;
+    if (a === 'record') openRecord();
+    else if (a === 'nav') openNavMenu();
+    else if (a === 'lowstock') { e.preventDefault(); S.ui.stockCat = 'LOW'; S.ui.stockQ = ''; saveUI(); if (route() === 'stock') render(); else location.hash = '#stock'; }
+    else if (a === 'scan-stock') scanToItem();
+    else if (a === 'new-item') formItem({}, true);
+    else if (a === 'new-customer') formCustomer();
+    else if (a === 'new-lens') formLens();
+    else if (a === 'new-job') formJob();
+    else if (a === 'pull') pull();
+    else if (a === 'print') window.print();
+    else if (a === 'disconnect') { S.cfg.url = ''; S.cfg.key = ''; saveCfg(); location.reload(); }
+    else if (a === 'reset-demo') { ls.del('cnmp.demo'); location.reload(); }
+    else if (a === 'backup') {
+      const u = URL.createObjectURL(new Blob([JSON.stringify(S.db, null, 1)], { type: 'application/json' })), x = document.createElement('a');
+      x.href = u; x.download = `cnmp-backup-${todayISO()}.json`; document.body.appendChild(x); x.click(); x.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000);
+    }
+    return;
+  }
+  const it = t.closest('[data-item]'); if (it) { openItem(it.dataset.item); return; }
+  const cu = t.closest('[data-cust]'); if (cu) { openCustomer(cu.dataset.cust); return; }
+  const le = t.closest('[data-lens]'); if (le) { openLens(le.dataset.lens); return; }
+  const op = t.closest('[data-open]');
+  if (op) {
+    const [sheet, id] = op.dataset.open.split(':');
+    const row = (S.db[sheet] || []).find(r => String(r[ID[sheet]]) === id); if (!row) return;
+    if (sheet === 'JOBS') formJob(Object.assign({}, row)); else formRow(sheet, Object.assign({}, row));
+    return;
+  }
+  const c = t.closest('[data-cat]'); if (c) { S.ui.stockCat = c.dataset.cat; saveUI(); render(); return; }
+  const b = t.closest('[data-brand]'); if (b) { S.ui.lensBrand = b.dataset.brand; saveUI(); render(); return; }
+  const l = t.closest('[data-ledger]'); if (l) { S.ui.ledger = l.dataset.ledger; saveUI(); render(); return; }
+  const j = t.closest('[data-jobst]'); if (j) { S.ui.jobSt = j.dataset.jobst; saveUI(); render(); return; }
+  const h = t.closest('[data-hlist]'); if (h) { S.ui.homeList = h.dataset.hlist; saveUI(); render(); return; }
+  const y = t.closest('[data-year]'); if (y && y.dataset.year) { S.ui.year = +y.dataset.year; render(); return; }
+  const th = t.closest('[data-theme-set]'); if (th) { S.cfg.theme = th.dataset.themeSet; saveCfg(); applyTheme(); render(); return; }
+  const dv = t.closest('[data-device-set]'); if (dv) { S.cfg.device = dv.dataset.deviceSet; saveCfg(); applyDevice(); render(); return; }
+});
+const SEARCH = { stockQ: 'stockQ', ledgerQ: 'ledgerQ', custQ: 'custQ', lensQ: 'lensQ' };
+const onSearch = debounce(el => { S.ui[SEARCH[el.id]] = el.value; fillLists(); }, 90);
+document.addEventListener('input', e => { if (SEARCH[e.target.id]) onSearch(e.target); });
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'cfgForm') return;
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  S.cfg.url = String(fd.get('url') || '').trim(); S.cfg.key = String(fd.get('key') || '').trim(); saveCfg();
+  if (!S.cfg.url) { toast('ใส่ Web app URL ก่อน'); return; }
+  S.mode = 'live'; S.queue = []; ls.set('cnmp.queue', []);
+  await pull();
+  render();
+});
+
+/* ============ boot: paint from local buffer first, sync after ============ */
+(function boot() {
+  applyTheme(); applyDevice();
+  if (S.cfg.url) { S.mode = 'live'; S.db = normalize(ls.get('cnmp.cache', null) || emptyDB()); S.sync = S.queue.length ? 'pending' : 'ok'; }
+  else if (window.CNMP_SEED) { S.mode = 'demo'; S.db = normalize(ls.get('cnmp.demo', null) || window.CNMP_SEED); }
+  else { S.mode = 'local'; S.db = normalize(ls.get('cnmp.cache', null) || emptyDB()); }
+  derive(); render();
+  window.__bootMs = performance.now() - T0;
+  // non-critical work after first paint
+  setTimeout(() => {
+    const f = document.createElement('link'); f.rel = 'stylesheet';
+    f.href = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600&display=swap';
+    f.onload = () => { if (route() === 'home') drawChart(); };
+    document.head.appendChild(f);
+    if (S.mode === 'live') { flush(); if (Date.now() - S.lastPull > 15000) pull(true); }
+    if ('serviceWorker' in navigator && document.documentElement.classList.contains('gh') && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+  }, 0);
+  setInterval(() => { if (S.mode === 'live' && !stack.length && document.visibilityState === 'visible') pull(true); }, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
